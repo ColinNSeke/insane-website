@@ -17,6 +17,7 @@ import StackedFallback from './StackedFallback'
 import ChapterText from './ChapterText'
 
 import JourneyBeam from './overlays/JourneyBeam'
+import ChipActivation from './overlays/ChipActivation'
 import ChipPortal from './overlays/ChipPortal'
 import UnfoldLayers from './overlays/UnfoldLayers'
 import CardCallouts from './overlays/CardCallouts'
@@ -191,6 +192,7 @@ function PinnedExperience() {
 
           {/* -------- persistent connector beam + per-chapter effects */}
           <JourneyBeam progressRef={progressRef} />
+          <ChipActivation progressRef={progressRef} />
           <ChipPortal progressRef={progressRef} />
           <UnfoldLayers progressRef={progressRef} />
           <CardCallouts progressRef={progressRef} range={CHAPTERS[1].range} />

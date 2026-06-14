@@ -356,6 +356,11 @@
   will-change: transform, opacity;
 }
 
+/* ====================================================== CHIP ACTIVATION */
+.chip-activation {
+  z-index: 13;
+}
+
 /* ====================================================== CHIP PORTAL (ring) */
 .portal {
   position: absolute;
