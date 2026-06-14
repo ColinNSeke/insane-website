@@ -66,6 +66,17 @@ export default function ChipActivation({ progressRef }: Props) {
         const pulse = 0.65 + 0.35 * Math.sin(t * 2.6)
         const glowAmt = clamp01(act * (1 - port * 0.8))
 
+        // chip focus: darken everything except the chip module, release on portal
+        const dim = smoothstep(0.2, 0.245, p) * (1 - port) * 0.5
+        if (dim > 0.001) {
+          const dg = ctx.createRadialGradient(cx, cy, 0.14 * unit, cx, cy, 0.72 * unit)
+          dg.addColorStop(0, 'rgba(2,4,9,0)')
+          dg.addColorStop(0.55, `rgba(2,4,9,${dim * 0.7})`)
+          dg.addColorStop(1, `rgba(2,4,9,${dim})`)
+          ctx.fillStyle = dg
+          ctx.fillRect(0, 0, w, h)
+        }
+
         ctx.globalCompositeOperation = 'lighter'
 
         // localized core glow (bright, unmistakable)

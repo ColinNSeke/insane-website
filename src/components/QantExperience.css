@@ -356,6 +356,20 @@
   will-change: transform, opacity;
 }
 
+/* ====================================================== DEV READOUT */
+.dev-readout {
+  position: fixed;
+  top: 44px;
+  right: 110px;
+  z-index: 90;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: rgba(190, 220, 255, 0.5);
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ====================================================== CHIP ACTIVATION */
 .chip-activation {
   z-index: 13;

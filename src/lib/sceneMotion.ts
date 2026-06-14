@@ -53,7 +53,7 @@ export function computeSceneMotion(id: string, p: number): SceneMotion {
       if (p < 0.175) x = ramp(p, 0.12, 0.175, 12, 0, I3)
       else if (p >= 0.255) x = ramp(p, 0.255, 0.335, 0, -18, I3)
 
-      const y = p < 0.255 ? 0 : ramp(p, 0.255, 0.335, 0, 5, I3)
+      const y = p < 0.255 ? 0 : ramp(p, 0.255, 0.335, 0, 8, I3)
       return { opacity, scale, x, y, clip: null }
     }
 
@@ -108,10 +108,10 @@ export function computeSceneMotion(id: string, p: number): SceneMotion {
       else if (p >= 0.615 && p < 0.685) opacity = 1
       else if (p >= 0.685) opacity = ramp(p, 0.685, 0.735, 1, 0, I2)
 
-      let scale = 1.12
+      let scale = 1.14
       if (p < 0.615) scale = ramp(p, 0.545, 0.615, 1.12, 1.04, I3)
-      else if (p < 0.685) scale = ramp(p, 0.615, 0.685, 1.04, 1.12) // push into corridor
-      else scale = 1.12
+      else if (p < 0.685) scale = ramp(p, 0.615, 0.685, 1.04, 1.14) // push into corridor
+      else scale = 1.14
 
       const x = p < 0.615 ? 0 : ramp(p, 0.615, 0.685, 0, -4)
       return { opacity, scale, x, y: 0, clip: null }

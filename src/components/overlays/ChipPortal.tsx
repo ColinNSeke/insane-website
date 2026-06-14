@@ -25,7 +25,7 @@ export default function ChipPortal({ progressRef }: Props) {
         const near = p > 0.24 && p < 0.345
         if (near) {
           const r = ramp(p, 0.255, 0.335, 4, 150, power3InOut) // vw radius
-          const op = pulse(p, 0.255, 0.285, 0.305, 0.335, power3InOut) * 0.75
+          const op = pulse(p, 0.255, 0.285, 0.305, 0.335, power3InOut) * 0.95
           ring.style.opacity = String(op)
           ring.style.width = `${r * 2}vw`
           ring.style.height = `${r * 2}vw`

@@ -53,6 +53,7 @@ function PinnedExperience() {
   const imgRefs = useRef<HTMLImageElement[]>([])
   const progressFillRef = useRef<HTMLSpanElement>(null)
   const footerRef = useRef<HTMLElement>(null)
+  const devReadoutRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     // preload all scene images so crossfades never flash
@@ -107,6 +108,12 @@ function PinnedExperience() {
         lastActiveRef.current = next
         setActive(next)
       }
+
+      // dev-only progress readout (stripped from production builds)
+      if (import.meta.env.DEV && devReadoutRef.current) {
+        const ch = CHAPTERS.find((c) => p >= c.range[0] && p < c.range[1]) ?? CHAPTERS[6]
+        devReadoutRef.current.textContent = `p ${p.toFixed(3)} · ch${ch.index} ${ch.id}`
+      }
     }
 
     // ---- Lenis smooth scroll
@@ -155,6 +162,9 @@ function PinnedExperience() {
       <FixedNav />
       <ChapterRail active={active} />
       <ScrollProgress ref={progressFillRef} />
+      {import.meta.env.DEV && (
+        <div ref={devReadoutRef} className="dev-readout" aria-hidden="true" />
+      )}
 
       <div ref={scrollRef} className="experience-scroll">
         <div ref={stageRef} className="pinned-stage">
@@ -215,6 +225,7 @@ function PinnedExperience() {
                 title={c.title}
                 body={c.body}
                 cta={c.cta}
+                textStart={c.textStart}
               />
             ))}
           </div>

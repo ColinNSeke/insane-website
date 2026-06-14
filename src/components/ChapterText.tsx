@@ -11,6 +11,8 @@ interface Props {
   title: string[]
   body: string
   cta: string
+  /** local progress at which the stagger begins (default 0.06) */
+  textStart?: number
 }
 
 // per-element enter delay (local progress) + enter/exit travel (px)
@@ -34,6 +36,7 @@ export default function ChapterText({
   title,
   body,
   cta,
+  textStart = 0.06,
 }: Props) {
   const refs = useRef<Record<string, HTMLElement | null>>({})
 
@@ -51,7 +54,8 @@ export default function ChapterText({
           node.style.opacity = '0'
           continue
         }
-        const tin = power3Out(clamp01(invlerp(el.delay, el.delay + 0.38, local)))
+        const start = textStart + el.delay
+        const tin = power3Out(clamp01(invlerp(start, start + 0.34, local)))
         const tout = power2In(clamp01(invlerp(0.82, 1.0, local)))
         const opacity = tin * (1 - tout)
         const y = (1 - tin) * el.yIn - tout * el.yOut
@@ -62,7 +66,7 @@ export default function ChapterText({
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [progressRef, range])
+  }, [progressRef, range, textStart])
 
   return (
     <article id={id} className="chapter-content">

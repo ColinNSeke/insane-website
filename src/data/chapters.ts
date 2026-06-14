@@ -24,7 +24,18 @@ export interface Chapter {
   title: string[]
   body: string
   cta: string
+  /** local progress at which the text stagger begins (default ~0.1).
+   *  Used to make copy land *after* a portal/scene transition settles. */
+  textStart?: number
 }
+
+/**
+ * Section 03 destination world. `inside-light.png` is the intended waveguide
+ * world; it is not present in the repo, so we fall back to the core render.
+ * Drop public/assets/qant/inside-light.png to switch — no code change needed
+ * beyond pointing the core chapter asset here.
+ */
+export const INSIDE_LIGHT = '/assets/qant/03_core.png'
 
 export const CHAPTERS: Chapter[] = [
   {
@@ -57,7 +68,7 @@ export const CHAPTERS: Chapter[] = [
     id: 'core',
     index: 3,
     range: [0.285, 0.425],
-    asset: '/assets/qant/03_core.png',
+    asset: INSIDE_LIGHT,
     objectPosition: '70% center',
     scaleFrom: 1.08,
     scaleTo: 1.02,
@@ -65,6 +76,8 @@ export const CHAPTERS: Chapter[] = [
     title: ['Light', 'Becomes Math'],
     body: 'Inside the photonic core, light travels through engineered pathways, where signals are routed, combined, and measured with near-zero resistive loss.',
     cta: 'Enter the Core',
+    // copy appears only after the portal lands the viewer inside the core world
+    textStart: 0.36,
   },
   {
     id: 'architecture',
