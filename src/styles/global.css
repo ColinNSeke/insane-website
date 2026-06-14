@@ -1,0 +1,94 @@
+:root {
+  --bg-0: #05070a;
+  --bg-1: #070a0d;
+  --bg-graphite: #0a0e12;
+
+  --headline: #f5f7f8;
+  --body: rgba(238, 244, 248, 0.68);
+  --micro: rgba(238, 244, 248, 0.58);
+
+  --accent-0: #dceeff;
+  --accent-1: #bfdfff;
+  --accent-2: #9fcbff;
+  --amber: #c5a66a;
+
+  --line-soft: rgba(255, 255, 255, 0.14);
+  --line-mid: rgba(255, 255, 255, 0.28);
+  --line-strong: rgba(255, 255, 255, 0.35);
+
+  --font-display: 'Cormorant', Georgia, 'Times New Roman', serif;
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --nav-pad: 48px;
+  --rail-left: 52px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background: var(--bg-0);
+  color: var(--headline);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+#root {
+  position: relative;
+  width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+::selection {
+  background: rgba(190, 223, 255, 0.22);
+  color: #fff;
+}
+
+/* Lenis */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* Reduced-motion: never animate transforms via CSS transitions globally */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+  }
+}
