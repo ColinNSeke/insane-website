@@ -52,7 +52,7 @@ export default function ChipActivation({ progressRef }: Props) {
       last = now
       t += dt
       const p = progressRef.current
-      const near = p > 0.19 && p < 0.345
+      const near = p > 0.155 && p < 0.345
       const { w, h } = fitCanvas(canvas, ctx)
       ctx.clearRect(0, 0, w, h)
 
@@ -61,20 +61,21 @@ export default function ChipActivation({ progressRef }: Props) {
         const cy = (PORTAL_Y / 100) * h
         const unit = Math.min(w, h)
 
-        const act = smoothstep(0.205, 0.255, p) // core comes online
+        const act = smoothstep(0.17, 0.25, p) // core comes online (earlier + wider)
         const port = smoothstep(0.255, 0.335, p) // portal opens from glow
-        const pulse = 0.6 + 0.4 * Math.sin(t * 2.2)
-        const glowAmt = clamp01(act * (1 - port * 0.85))
+        const pulse = 0.65 + 0.35 * Math.sin(t * 2.6)
+        const glowAmt = clamp01(act * (1 - port * 0.8))
 
         ctx.globalCompositeOperation = 'lighter'
 
-        // localized core glow
+        // localized core glow (bright, unmistakable)
         if (glowAmt > 0.001) {
-          const r = (0.1 + act * 0.06 + port * 0.05) * unit
+          const r = (0.16 + act * 0.1 + port * 0.08) * unit
           const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r)
-          const a = glowAmt * 0.7 * pulse
-          g.addColorStop(0, `rgba(190,222,255,${a})`)
-          g.addColorStop(0.32, `rgba(120,180,255,${a * 0.45})`)
+          const a = Math.min(1, glowAmt * 1.15 * pulse)
+          g.addColorStop(0, `rgba(230,246,255,${a})`)
+          g.addColorStop(0.18, `rgba(190,222,255,${a * 0.8})`)
+          g.addColorStop(0.45, `rgba(120,180,255,${a * 0.4})`)
           g.addColorStop(1, 'rgba(80,140,230,0)')
           ctx.fillStyle = g
           ctx.beginPath()
@@ -82,19 +83,33 @@ export default function ChipActivation({ progressRef }: Props) {
           ctx.fill()
         }
 
+        // expanding "online" ping rings — clearly signal the core activating
+        const ringA = clamp01(act) * (1 - port)
+        if (ringA > 0.001) {
+          for (let j = 0; j < 3; j++) {
+            const ph = (t * 0.6 + j / 3) % 1
+            const rr = ph * 0.34 * unit
+            ctx.strokeStyle = `rgba(200,230,255,${(1 - ph) * ringA * 0.55})`
+            ctx.lineWidth = 1.4
+            ctx.beginPath()
+            ctx.arc(cx, cy, rr, 0, Math.PI * 2)
+            ctx.stroke()
+          }
+        }
+
         // a few short light paths emanating inside the chip (contained)
         const pathA = clamp01(act) * (1 - port)
         if (pathA > 0.001) {
-          const len = 0.15 * unit
+          const len = 0.2 * unit
           for (let k = 0; k < N_PATHS; k++) {
             const ang = (k / N_PATHS) * Math.PI * 2 + t * 0.05
             const ex = cx + Math.cos(ang) * len
             const ey = cy + Math.sin(ang) * len * 0.7
             const grad = ctx.createLinearGradient(cx, cy, ex, ey)
-            grad.addColorStop(0, `rgba(220,238,255,${0.42 * pathA})`)
+            grad.addColorStop(0, `rgba(226,242,255,${0.7 * pathA})`)
             grad.addColorStop(1, 'rgba(220,238,255,0)')
             ctx.strokeStyle = grad
-            ctx.lineWidth = 1
+            ctx.lineWidth = 1.3
             ctx.beginPath()
             ctx.moveTo(cx, cy)
             ctx.lineTo(ex, ey)
