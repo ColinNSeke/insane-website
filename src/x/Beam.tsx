@@ -16,24 +16,26 @@ const fragmentShader = /* glsl */ `
   uniform float uFlare;
   varying vec2 vUv;
   void main() {
-    // tight vertical falloff -> a thin core line
+    // very tight vertical falloff -> a thin grazing core line
     float core = smoothstep(0.5, 0.0, abs(vUv.y - 0.5));
-    core = pow(core, 3.0);
+    core = pow(core, 8.0);
 
     // travelling hot-spot sweeping along x (always moving)
     float head = fract(uTime * 0.12);
-    float hot = smoothstep(0.14, 0.0, abs(vUv.x - head));
+    float hot = smoothstep(0.1, 0.0, abs(vUv.x - head));
     hot = pow(hot, 2.0);
 
     // slow breathing pulse + edge fade so the line dies off-screen
-    float pulse = 0.55 + 0.45 * sin(uTime * 1.6);
-    float edges = smoothstep(0.0, 0.08, vUv.x) * smoothstep(1.0, 0.92, vUv.x);
+    float pulse = 0.5 + 0.5 * sin(uTime * 1.6);
+    float edges = smoothstep(0.0, 0.1, vUv.x) * smoothstep(1.0, 0.9, vUv.x);
 
-    float intensity = (core * (0.35 + pulse * 0.4) + hot * (1.2 + uVel * 2.0));
+    // accent only — capped emissive so bloom (threshold ~0.75) just kisses it
+    float intensity = core * (0.45 + pulse * 0.35) + core * hot * (0.5 + uVel * 0.6);
     intensity *= edges;
-    intensity += core * uFlare * 1.5;
+    intensity += core * uFlare * 0.5;
+    intensity = min(intensity, 1.2);
 
-    vec3 cool = mix(vec3(0.45, 0.75, 1.0), vec3(0.9, 0.97, 1.0), hot + uFlare);
+    vec3 cool = mix(vec3(0.5, 0.78, 1.0), vec3(0.92, 0.97, 1.0), hot * 0.6 + uFlare * 0.4);
     gl_FragColor = vec4(cool * intensity, intensity);
   }
 `
@@ -74,7 +76,7 @@ export default function Beam({ velocityRef, flareRef }: Props) {
 
   return (
     <mesh ref={meshRef}>
-      <planeGeometry args={[34, 1.6, 1, 1]} />
+      <planeGeometry args={[34, 0.7, 1, 1]} />
       <shaderMaterial
         ref={matRef}
         uniforms={uniforms}

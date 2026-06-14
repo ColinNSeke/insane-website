@@ -47,17 +47,15 @@ export default function Scene({ progressRef, velocityRef, mobile }: Props) {
     }
     const cross = Math.exp(-(nearest * nearest) / (2 * 0.7 * 0.7))
     flareRef.current = THREE.MathUtils.clamp(
-      cross * 0.7 + velocityRef.current * 0.5,
+      cross * 0.35 + velocityRef.current * 0.3,
       0,
-      1.4,
+      0.8,
     )
   })
 
   return (
     <>
-      <color attach="background" args={['#04060a']} />
-      <fog attach="fog" args={['#04060a', 8, 34]} />
-      <ambientLight intensity={0.4} />
+      <color attach="background" args={['#03050a']} />
 
       {X_SECTIONS.map((s, i) => (
         <DepthPlane

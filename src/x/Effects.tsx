@@ -30,11 +30,12 @@ export default function Effects({ velocityRef, flareRef, mobile }: Props) {
   useFrame(() => {
     const v = velocityRef.current
     const f = flareRef.current
+    // restrained: only nudge bloom/aberration with velocity, never white-out
     if (bloomRef.current) {
-      bloomRef.current.intensity = (mobile ? 0.85 : 1.25) + v * 1.6 + f * 1.4
+      bloomRef.current.intensity = 0.45 + v * 0.4 + f * 0.35
     }
     if (caRef.current && caRef.current.offset) {
-      const o = 0.0006 + v * 0.004 + f * 0.0025
+      const o = 0.0004 + v * 0.0022 + f * 0.0012
       ;(caRef.current.offset as THREE.Vector2).set(o, o * 0.6)
     }
   })
@@ -44,12 +45,13 @@ export default function Effects({ velocityRef, flareRef, mobile }: Props) {
       <EffectComposer multisampling={0}>
         <Bloom
           ref={bloomRef}
-          intensity={0.85}
-          luminanceThreshold={0.2}
-          luminanceSmoothing={0.7}
+          intensity={0.4}
+          radius={0.4}
+          luminanceThreshold={0.78}
+          luminanceSmoothing={0.6}
           mipmapBlur
         />
-        <Vignette eskil={false} offset={0.25} darkness={0.85} />
+        <Vignette eskil={false} offset={0.3} darkness={0.95} />
       </EffectComposer>
     )
   }
@@ -58,20 +60,21 @@ export default function Effects({ velocityRef, flareRef, mobile }: Props) {
     <EffectComposer multisampling={4}>
       <Bloom
         ref={bloomRef}
-        intensity={1.25}
-        luminanceThreshold={0.15}
-        luminanceSmoothing={0.75}
+        intensity={0.45}
+        radius={0.4}
+        luminanceThreshold={0.75}
+        luminanceSmoothing={0.65}
         mipmapBlur
       />
       <ChromaticAberration
         ref={caRef}
         blendFunction={BlendFunction.NORMAL}
-        offset={new THREE.Vector2(0.0006, 0.0004)}
+        offset={new THREE.Vector2(0.0004, 0.0003)}
         radialModulation={false}
         modulationOffset={0}
       />
-      <Vignette eskil={false} offset={0.22} darkness={0.92} />
-      <Noise opacity={0.035} blendFunction={BlendFunction.OVERLAY} />
+      <Vignette eskil={false} offset={0.28} darkness={0.95} />
+      <Noise opacity={0.025} blendFunction={BlendFunction.OVERLAY} />
     </EffectComposer>
   )
 }

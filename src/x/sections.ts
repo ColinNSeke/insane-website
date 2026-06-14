@@ -36,7 +36,7 @@ export const X_SECTIONS: XSection[] = CHAPTERS.map((c, i) => {
     title: c.title,
     cta: c.cta,
     tint: TINTS[i] ?? [0.88, 0.95, 1.06],
-    displace: 1.1,
+    displace: 0.28,
   }
 })
 

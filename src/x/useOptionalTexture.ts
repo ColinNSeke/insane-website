@@ -38,12 +38,20 @@ export function useColorTexture(url: string): THREE.Texture | null {
 
   useEffect(() => {
     let alive = true
-    loader.load(url, (t) => {
-      if (!alive) return
-      t.colorSpace = THREE.SRGBColorSpace
-      t.anisotropy = 4
-      setTex(t)
-    })
+    loader.load(
+      url,
+      (t) => {
+        if (!alive) return
+        t.colorSpace = THREE.SRGBColorSpace
+        t.anisotropy = 4
+        setTex(t)
+      },
+      undefined,
+      () => {
+        // surface missing section textures loudly
+        console.warn(`[x] section texture failed to load: ${url}`)
+      },
+    )
     return () => {
       alive = false
     }

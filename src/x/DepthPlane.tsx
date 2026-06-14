@@ -1,45 +1,8 @@
-import { useMemo, useRef } from 'react'
+import { useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { XSection } from './sections'
 import { useColorTexture, useOptionalTexture } from './useOptionalTexture'
-
-const vertexShader = /* glsl */ `
-  uniform sampler2D uDepth;
-  uniform float uHasDepth;
-  uniform float uDisplace;
-  uniform float uParallax;
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    vec3 pos = position;
-    if (uHasDepth > 0.5) {
-      float d = texture2D(uDepth, uv).r;
-      pos.z += (d - 0.5) * uDisplace;
-    } else {
-      // subtle 2-layer parallax fallback: gentle bow so the plane is never flat-dead
-      float r = distance(uv, vec2(0.5));
-      pos.z += (0.5 - r) * uParallax;
-    }
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-  }
-`
-
-const fragmentShader = /* glsl */ `
-  uniform sampler2D uMap;
-  uniform float uOpacity;
-  uniform vec3 uTint;
-  uniform float uFlare;
-  varying vec2 vUv;
-  void main() {
-    vec4 c = texture2D(uMap, vUv);
-    vec3 col = c.rgb * uTint;
-    // light-bridge flare lifts highlights toward white during transitions
-    col += pow(max(col.r, max(col.g, col.b)), 2.0) * uFlare * vec3(0.6, 0.8, 1.0);
-    gl_FragColor = vec4(col, c.a * uOpacity);
-    #include <colorspace_fragment>
-  }
-`
 
 interface Props {
   section: XSection
@@ -48,55 +11,81 @@ interface Props {
   flareRef: React.MutableRefObject<number>
 }
 
-const PLANE_W = 12
-const PLANE_H = 6.75
+const PLANE_W = 13.5
+const PLANE_H = 7.6
 
-export default function DepthPlane({ section, z, flareRef }: Props) {
-  const matRef = useRef<THREE.ShaderMaterial>(null)
+/**
+ * Section image plane. The IMAGE is the hero: rendered with an unlit
+ * MeshBasicMaterial (full colour, unaffected by scene lighting) and the
+ * renderer's ACES tone mapping, so it stays sharp and readable. Geometry is
+ * gently depth-displaced (¼ of the previous amplitude) so it never tears.
+ */
+export default function DepthPlane({ section, z }: Props) {
   const map = useColorTexture(section.image)
   const depth = useOptionalTexture(section.depth)
   const { camera } = useThree()
 
-  const uniforms = useMemo(
+  // uniforms injected into the basic material's vertex stage
+  const uni = useMemo(
     () => ({
-      uMap: { value: null as THREE.Texture | null },
       uDepth: { value: null as THREE.Texture | null },
       uHasDepth: { value: 0 },
       uDisplace: { value: section.displace },
-      uParallax: { value: 0.6 },
-      uOpacity: { value: 0 },
-      uTint: { value: new THREE.Vector3(...section.tint) },
-      uFlare: { value: 0 },
+      uParallax: { value: 0.16 },
     }),
-    [section.displace, section.tint],
+    [section.displace],
   )
 
-  useFrame(() => {
-    const u = uniforms
-    if (map && u.uMap.value !== map) u.uMap.value = map
-    if (depth && u.uDepth.value !== depth) {
-      u.uDepth.value = depth
-      u.uHasDepth.value = 1
+  const material = useMemo(() => {
+    const m = new THREE.MeshBasicMaterial({
+      transparent: true,
+      depthWrite: false,
+      toneMapped: true,
+    })
+    m.onBeforeCompile = (shader) => {
+      shader.uniforms.uDepth = uni.uDepth
+      shader.uniforms.uHasDepth = uni.uHasDepth
+      shader.uniforms.uDisplace = uni.uDisplace
+      shader.uniforms.uParallax = uni.uParallax
+      shader.vertexShader =
+        'uniform sampler2D uDepth;\nuniform float uHasDepth;\nuniform float uDisplace;\nuniform float uParallax;\n' +
+        shader.vertexShader
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+        #ifdef USE_UV
+          if (uHasDepth > 0.5) {
+            float d = texture2D(uDepth, uv).r;
+            transformed.z += (d - 0.5) * uDisplace;
+          } else {
+            float r = distance(uv, vec2(0.5));
+            transformed.z += (0.5 - r) * uParallax;
+          }
+        #endif`,
+      )
     }
-    // distance ahead of the camera (camera looks toward -Z)
+    return m
+  }, [uni])
+
+  useFrame(() => {
+    if (map && material.map !== map) {
+      material.map = map
+      material.needsUpdate = true
+    }
+    if (depth && uni.uHasDepth.value === 0) {
+      uni.uDepth.value = depth
+      uni.uHasDepth.value = 1
+    }
+    // distance ahead of the camera (looking toward -Z)
     const ahead = camera.position.z - z
     const fadeIn = THREE.MathUtils.smoothstep(ahead, 22, 11)
     const fadeOut = THREE.MathUtils.smoothstep(ahead, -3.2, 1.2)
-    u.uOpacity.value = fadeIn * fadeOut
-    u.uFlare.value = flareRef.current
+    material.opacity = fadeIn * fadeOut
   })
 
   return (
-    <mesh position={[0, 0, z]}>
+    <mesh position={[0, 0, z]} material={material}>
       <planeGeometry args={[PLANE_W, PLANE_H, 80, 80]} />
-      <shaderMaterial
-        ref={matRef}
-        uniforms={uniforms}
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
-        transparent
-        depthWrite={false}
-      />
     </mesh>
   )
 }

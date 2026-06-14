@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
+import * as THREE from 'three'
 import Lenis from '@studio-freight/lenis'
 import './chip.css'
 import Scene from './Scene'
@@ -51,6 +52,10 @@ export default function ChipExperience() {
           gl={{ antialias: !mobile, powerPreference: 'high-performance' }}
           camera={{ position: [0, 0, 6], fov: 55, near: 0.1, far: 200 }}
           frameloop={reduced ? 'demand' : 'always'}
+          onCreated={({ gl }) => {
+            gl.toneMapping = THREE.ACESFilmicToneMapping
+            gl.toneMappingExposure = 0.9
+          }}
         >
           <Scene progressRef={progressRef} velocityRef={velocityRef} mobile={mobile} />
         </Canvas>
