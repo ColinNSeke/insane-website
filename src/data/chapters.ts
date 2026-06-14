@@ -30,12 +30,10 @@ export interface Chapter {
 }
 
 /**
- * Section 03 destination world. `inside-light.png` is the intended waveguide
- * world; it is not present in the repo, so we fall back to the core render.
- * Drop public/assets/qant/inside-light.png to switch — no code change needed
- * beyond pointing the core chapter asset here.
+ * Section 03 destination world — the inside-light / photonic-waveguide image
+ * revealed through the chip portal.
  */
-export const INSIDE_LIGHT = '/assets/qant/03_core.png'
+export const INSIDE_LIGHT = '/assets/qant/inside-light.png'
 
 export const CHAPTERS: Chapter[] = [
   {
@@ -69,7 +67,7 @@ export const CHAPTERS: Chapter[] = [
     index: 3,
     range: [0.285, 0.425],
     asset: INSIDE_LIGHT,
-    objectPosition: '70% center',
+    objectPosition: '60% center',
     scaleFrom: 1.08,
     scaleTo: 1.02,
     eyebrow: '03 / Photonic Core',
