@@ -5,7 +5,8 @@ import Lenis from '@studio-freight/lenis'
 
 import './QantExperience.css'
 import { CHAPTERS } from '../data/chapters'
-import { clamp01, invlerp, lerp, smoothstep } from '../lib/math'
+import { clamp01, invlerp, smoothstep } from '../lib/math'
+import { computeSceneMotion } from '../lib/sceneMotion'
 import { useReducedMotion, useMediaQuery } from '../hooks/useReducedMotion'
 
 import FixedNav from './FixedNav'
@@ -13,8 +14,11 @@ import ChapterRail from './ChapterRail'
 import ScrollProgress from './ScrollProgress'
 import SiteFooter from './SiteFooter'
 import StackedFallback from './StackedFallback'
+import ChapterText from './ChapterText'
 
-import BeamScan from './overlays/BeamScan'
+import JourneyBeam from './overlays/JourneyBeam'
+import ChipPortal from './overlays/ChipPortal'
+import UnfoldLayers from './overlays/UnfoldLayers'
 import CardCallouts from './overlays/CardCallouts'
 import CorePaths from './overlays/CorePaths'
 import ArchitectureLayers from './overlays/ArchitectureLayers'
@@ -46,7 +50,6 @@ function PinnedExperience() {
   const stageRef = useRef<HTMLDivElement>(null)
   const sceneRefs = useRef<HTMLDivElement[]>([])
   const imgRefs = useRef<HTMLImageElement[]>([])
-  const contentRefs = useRef<HTMLElement[]>([])
   const progressFillRef = useRef<HTMLSpanElement>(null)
   const footerRef = useRef<HTMLElement>(null)
 
@@ -61,41 +64,28 @@ function PinnedExperience() {
   useEffect(() => {
     const applyProgress = (p: number) => {
       CHAPTERS.forEach((c, i) => {
-        const local = clamp01(invlerp(c.range[0], c.range[1], p))
+        const m = computeSceneMotion(c.id, p)
 
-        // scene opacity — stacked crossfade (later chapters paint on top)
+        // scene opacity + portal clip (camera-style transitions)
         const scene = sceneRefs.current[i]
         if (scene) {
-          const fade =
-            i === 0
-              ? smoothstep(0, 0.035, p)
-              : smoothstep(c.range[0], c.range[0] + 0.03, p)
-          scene.style.opacity = String(fade)
+          scene.style.opacity = String(m.opacity)
+          scene.style.clipPath = m.clip ?? 'none'
         }
 
-        // image scale + per-chapter motion
+        // image transform — scale / x(vw) / y(vh) + ch06 micro-jitter
         const img = imgRefs.current[i]
         if (img) {
-          const scale = lerp(c.scaleFrom, c.scaleTo, local)
-          let ty = 0
           let jx = 0
           let jy = 0
-          if (c.id === 'architecture') ty = lerp(0, -18, local)
-          if (c.id === 'transformation' && local > 0.42 && local < 0.5) {
-            jx = (Math.random() - 0.5) * 0.16
-            jy = (Math.random() - 0.5) * 0.16
+          if (c.id === 'transformation') {
+            const local = clamp01(invlerp(c.range[0], c.range[1], p))
+            if (local > 0.38 && local < 0.46) {
+              jx = (Math.random() - 0.5) * 0.08
+              jy = (Math.random() - 0.5) * 0.08
+            }
           }
-          img.style.transform = `translate(${jx}px, ${ty + jy}px) scale(${scale})`
-        }
-
-        // chapter text enter / exit
-        const content = contentRefs.current[i]
-        if (content) {
-          const tin = smoothstep(0.1, 0.32, local)
-          const tout = 1 - smoothstep(0.85, 1.0, local)
-          const op = tin * tout
-          content.style.opacity = String(op)
-          content.style.transform = `translateY(calc(-50% + ${(1 - tin) * 24}px))`
+          img.style.transform = `translate(calc(${m.x}vw + ${jx}px), calc(${m.y}vh + ${jy}px)) scale(${m.scale})`
         }
       })
 
@@ -199,8 +189,10 @@ function PinnedExperience() {
             ))}
           </div>
 
-          {/* -------- per-chapter effect overlays */}
-          <BeamScan progressRef={progressRef} range={CHAPTERS[0].range} />
+          {/* -------- persistent connector beam + per-chapter effects */}
+          <JourneyBeam progressRef={progressRef} />
+          <ChipPortal progressRef={progressRef} />
+          <UnfoldLayers progressRef={progressRef} />
           <CardCallouts progressRef={progressRef} range={CHAPTERS[1].range} />
           <CorePaths progressRef={progressRef} range={CHAPTERS[2].range} />
           <ArchitectureLayers progressRef={progressRef} range={CHAPTERS[3].range} />
@@ -211,26 +203,17 @@ function PinnedExperience() {
 
           {/* -------- chapter text (z40) */}
           <div className="content-layer">
-            {CHAPTERS.map((c, i) => (
-              <article
+            {CHAPTERS.map((c) => (
+              <ChapterText
                 key={c.id}
+                progressRef={progressRef}
+                range={c.range}
                 id={c.id}
-                ref={(el) => {
-                  if (el) contentRefs.current[i] = el
-                }}
-                className="chapter-content"
-              >
-                <div className="chapter-content__eyebrow">{c.eyebrow}</div>
-                <h1 className="chapter-content__title">
-                  {c.title.map((line) => (
-                    <span key={line}>{line}</span>
-                  ))}
-                </h1>
-                <p className="chapter-content__body">{c.body}</p>
-                <a className="chapter-content__cta" href="#">
-                  {c.cta}
-                </a>
-              </article>
+                eyebrow={c.eyebrow}
+                title={c.title}
+                body={c.body}
+                cta={c.cta}
+              />
             ))}
           </div>
 

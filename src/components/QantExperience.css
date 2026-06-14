@@ -23,7 +23,7 @@
   position: absolute;
   inset: 0;
   opacity: 0;
-  will-change: opacity;
+  will-change: opacity, clip-path;
 }
 
 .scene__img {
@@ -231,6 +231,9 @@
   top: 50%;
   transform: translateY(-50%);
   max-width: 48vw;
+}
+/* each text element animates individually (staggered enter/exit) */
+.ct {
   opacity: 0;
   will-change: opacity, transform;
 }
@@ -298,48 +301,119 @@
   color: var(--accent-1);
 }
 
-/* ============================================================= BEAM (ch1) */
-.beam {
+/* ====================================================== PERSISTENT BEAM */
+.jbeam {
   position: absolute;
   inset: 0;
   z-index: 10;
   opacity: 0;
   pointer-events: none;
+  --beam-y: 52vh;
 }
-.beam__line {
+.jbeam__glow {
   position: absolute;
-  top: 52%;
+  top: var(--beam-y);
   left: 0;
   width: 100vw;
-  height: 2px;
-  background: var(--accent-0);
-  filter: blur(8px);
+  height: 16px;
+  transform: translateY(-50%);
+  background: rgba(190, 220, 255, 0.22);
+  filter: blur(18px);
   opacity: 0;
+  will-change: opacity;
 }
-.beam__core {
+.jbeam--lite .jbeam__glow {
+  height: 10px;
+  filter: blur(9px);
+}
+.jbeam__core {
   position: absolute;
-  top: 52%;
+  top: var(--beam-y);
   left: 0;
   width: 100vw;
   height: 1px;
-  background: rgba(236, 245, 255, 0.9);
+  transform: translateY(-50%);
+  background: #eaf6ff;
+  box-shadow: 0 0 6px rgba(220, 238, 255, 0.45);
   opacity: 0;
+  will-change: opacity;
 }
-.beam__travel {
+.jbeam__head {
   position: absolute;
-  top: calc(52% - 60px);
+  top: var(--beam-y);
   left: 0;
-  width: 280px;
-  height: 122px;
-  transform: translateX(-25vw);
+  width: 260px;
+  height: 120px;
+  transform: translate(-25vw, -50%);
   background: radial-gradient(
     ellipse at center,
-    rgba(220, 238, 255, 0.55) 0%,
-    rgba(190, 220, 255, 0.18) 40%,
+    rgba(234, 246, 255, 0.6) 0%,
+    rgba(190, 220, 255, 0.18) 42%,
     transparent 72%
   );
   filter: blur(6px);
   opacity: 0;
+  will-change: transform, opacity;
+}
+
+/* ====================================================== CHIP PORTAL (ring) */
+.portal {
+  position: absolute;
+  inset: 0;
+  z-index: 14;
+  pointer-events: none;
+}
+.portal__ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(220, 238, 255, 0.35);
+  box-shadow: 0 0 28px rgba(190, 220, 255, 0.18),
+    inset 0 0 38px rgba(190, 220, 255, 0.1);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  will-change: opacity, width, height;
+}
+
+/* ====================================================== UNFOLD (core->arch) */
+.unfold {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  opacity: 0;
+  pointer-events: none;
+}
+.unfold__slice {
+  position: absolute;
+  left: 46%;
+  right: 6%;
+  height: 8%;
+  opacity: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(190, 220, 255, 0) 0%,
+    rgba(190, 220, 255, 0.07) 50%,
+    rgba(190, 220, 255, 0) 100%
+  );
+  border-top: 1px solid rgba(220, 238, 255, 0.22);
+  will-change: transform, opacity;
+}
+.unfold__connectors {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  will-change: opacity;
+}
+.unfold__connectors span {
+  position: absolute;
+  top: 26%;
+  height: 52%;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    rgba(220, 238, 255, 0) 0%,
+    rgba(220, 238, 255, 0.6) 50%,
+    rgba(220, 238, 255, 0) 100%
+  );
 }
 
 /* ============================================================= CALLOUTS (ch2) */
