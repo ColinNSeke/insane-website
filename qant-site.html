@@ -10,6 +10,18 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+<link rel="stylesheet" href="public/qant-enhance.css" />
+<script>
+  /* 50k enhancement — feature flag (default ON). Set false to ship
+     the bare prototype. Mobile / coarse-pointer devices get a baked
+     static hero instead of the live WebGL beam (battery + perf). */
+  window.QANT_ENHANCE = true;
+  (function () {
+    var coarse = matchMedia("(max-width:860px)").matches || matchMedia("(pointer:coarse)").matches;
+    window.__QANT_MOBILE__ = window.QANT_ENHANCE && coarse;
+    if (window.__QANT_MOBILE__) document.documentElement.classList.add("qant-static");
+  })();
+</script>
 <style>
   :root{
     --void:#04060a; --ink:#eef4f8; --mute:#7f8a99;
@@ -147,6 +159,12 @@
 </head>
 <body>
 <canvas id="gl"></canvas>
+<div class="hero-poster" aria-hidden="true"><img src="public/assets/qant/hero-poster.webp" alt="" /></div>
+<div class="sig-layer" id="sigLayer" aria-hidden="true">
+  <img src="public/assets/qant/renders/nps-core-beam.webp" alt="" loading="lazy" decoding="async" />
+  <div class="sig-flash"></div>
+</div>
+<div class="grain" aria-hidden="true"></div>
 <div class="prog" id="prog"></div>
 
 <nav id="nav">
@@ -181,7 +199,11 @@
 
   <!-- 2 · PROBLEM -->
   <section class="problem" id="problem">
-    <div class="wrap">
+    <div class="bg-layer" data-parallax="8" aria-hidden="true">
+      <img src="public/assets/qant/targeted/02_electronics_macro.webp" alt="" loading="lazy" decoding="async" />
+    </div>
+    <div class="wrap" data-readable>
+      <div class="scrim"></div>
       <div class="eyebrow reveal"><span class="dot"></span>Why photonics</div>
       <h2 class="reveal">The pressure on compute is <em>compounding.</em></h2>
       <div class="plist reveal">
@@ -194,8 +216,17 @@
 
   <!-- 3 · PRINCIPLE (payoff: the live beam gets named) -->
   <section class="principle" id="principle">
+    <div class="principle-media" aria-hidden="true">
+      <figure class="stage stage--reveal" data-lit>
+        <img src="public/assets/qant/targeted/04_optics_bench_blue.webp" alt="Beam-splitter optics on a photonics bench" loading="lazy" decoding="async" />
+      </figure>
+      <figure class="stage stage--reveal wg" data-lit>
+        <img src="public/assets/qant/renders/waveguides.webp" alt="Light routed through waveguides" loading="lazy" decoding="async" />
+      </figure>
+    </div>
     <div class="wrap">
-      <div class="col">
+      <div class="col" data-readable>
+        <div class="scrim"></div>
         <div class="eyebrow reveal"><span class="dot"></span>How it works</div>
         <h2 class="reveal">We compute by <em>interference.</em></h2>
         <p class="sub reveal">Data is encoded into light, split across waveguides, and recombined. The interference pattern <em>is</em> the computation — a matrix multiply performed at the speed of light, with almost no heat.</p>
@@ -208,9 +239,28 @@
     </div>
   </section>
 
+  <!-- 3b · ARCHITECTURE — exploded chip reveal -->
+  <section class="q-sec architecture" id="architecture">
+    <div class="bg-layer" data-parallax="6" aria-hidden="true">
+      <img src="public/assets/qant/renders/circuit-macro.webp" alt="" loading="lazy" decoding="async" />
+    </div>
+    <div class="q-wrap arch-grid">
+      <figure class="stage stage--reveal arch-fig kb" data-lit>
+        <img src="public/assets/qant/renders/chip-stack.webp" alt="Exploded view of the Q.ANT photonic processor stack" loading="lazy" decoding="async" />
+      </figure>
+      <div class="arch-copy" data-readable>
+        <div class="scrim"></div>
+        <div class="q-eyebrow"><span class="dot"></span>Architecture</div>
+        <h2 class="reveal">A processor you can <em>see through.</em></h2>
+        <p class="sub reveal">Thin-film lithium-niobate photonics, stacked layer on layer. Modulators, waveguides and detectors are co-integrated on a single die — the computation lives in the light passing between them.</p>
+      </div>
+    </div>
+  </section>
+
   <!-- 4 · PROOF (kinetic numbers) -->
   <section class="proof" id="proof">
-    <div class="wrap">
+    <div class="wrap" data-readable>
+      <div class="scrim"></div>
       <div class="eyebrow reveal"><span class="dot"></span>The leap</div>
       <h2 class="reveal">One optical element does the work of <em>thousands.</em></h2>
       <div class="stats">
@@ -221,9 +271,122 @@
     </div>
   </section>
 
+  <!-- ★ SIGNATURE — the live beam is born from the real chip.
+       The product render lives in the fixed #sigLayer (above the
+       beam, below <main>) so it can screen-blend with the live beam. -->
+  <section class="q-sec signature" id="signature">
+    <div class="sig-copy">
+      <div class="q-eyebrow"><span class="dot"></span>The source</div>
+      <h2>The light <em>starts here.</em></h2>
+    </div>
+  </section>
+
+  <!-- PRODUCT -->
+  <section class="q-sec product" id="product">
+    <div class="q-wrap" data-readable>
+      <div class="scrim"></div>
+      <div class="q-eyebrow"><span class="dot"></span>The product</div>
+      <h2 class="reveal">Native photonic acceleration, <em>rack-ready.</em></h2>
+      <p class="sub reveal">A drop-in Native Processing Server and a PCIe accelerator card — photonic compute that speaks the language your data centre already runs.</p>
+      <div class="product-grid">
+        <figure class="stage stage--reveal" data-lit>
+          <img src="public/assets/qant/renders/accelerator-card.webp" alt="Q.ANT photonic accelerator card" loading="lazy" decoding="async" />
+          <figcaption class="product-cap"><div class="k">PCIe · drop-in</div><div class="t">Accelerator card</div></figcaption>
+        </figure>
+        <figure class="stage stage--reveal" data-lit>
+          <img src="public/assets/qant/targeted/09_nps_rack_closeup.webp" alt="Q.ANT Native Processing Server in a rack" loading="lazy" decoding="async" />
+          <figcaption class="product-cap"><div class="k">2U · rack unit</div><div class="t">Native Processing Server</div></figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- APPLICATIONS — bento -->
+  <section class="q-sec applications" id="applications">
+    <div class="q-wrap" data-readable>
+      <div class="scrim"></div>
+      <div class="q-eyebrow"><span class="dot"></span>Applications</div>
+      <h2 class="reveal">Where light does the <em>heavy lifting.</em></h2>
+      <div class="bento">
+        <article class="card s3">
+          <figure class="stage stage--reveal" data-lit><img src="public/assets/qant/targeted/10_photonic_chip_macro.webp" alt="Photonic processor die, close-up" loading="lazy" decoding="async" /></figure>
+          <div class="meta"><div class="k">01 · Generative AI</div><h3>Large language models</h3><p>The matrix multiplies at the core of every transformer, run as optical interference — at the speed of light.</p></div>
+        </article>
+        <article class="card s3">
+          <figure class="stage stage--reveal" data-lit><img src="public/assets/qant/targeted/05_eye_perception_metaphor.webp" alt="Human eye lit by an optical sensor" loading="lazy" decoding="async" /></figure>
+          <div class="meta"><div class="k">02 · Inference</div><h3>Real-time video analytics</h3><p>Perceive and classify high-rate streams the instant they arrive.</p></div>
+        </article>
+        <article class="card s2">
+          <figure class="stage stage--reveal" data-lit><img src="public/assets/qant/targeted/08_photonic_simulation_screen.webp" alt="Photonic mesh simulation on screen" loading="lazy" decoding="async" /></figure>
+          <div class="meta"><div class="k">03 · HPC</div><h3>Molecular dynamics</h3><p>Simulate matter at scale — without the power budget.</p></div>
+        </article>
+        <article class="card s4">
+          <figure class="stage stage--reveal" data-lit><img src="public/assets/qant/targeted/07_satellite_earth_data.webp" alt="Satellite relaying data over Earth" loading="lazy" decoding="async" /></figure>
+          <div class="meta"><div class="k">04 · Edge &amp; space</div><h3>Earth-scale sensing</h3><p>From orbit to ground station, compute travels with the data instead of waiting for it.</p></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- OVERSIZED STATEMENT -->
+  <section class="q-sec statement" id="statement">
+    <div class="bg-layer" data-parallax="14" aria-hidden="true">
+      <img src="public/assets/qant/renders/circuit-canyon.webp" alt="" loading="lazy" decoding="async" />
+    </div>
+    <div class="q-wrap">
+      <h2 class="statement-h" data-split>Compute *without* the heat.</h2>
+      <p class="sub reveal">Photonic interference dissipates almost nothing. The maths happens in flight — no charge to move, no heat to pump out.</p>
+    </div>
+  </section>
+
+  <!-- DEPLOYMENT -->
+  <section class="q-sec deployment" id="deployment">
+    <div class="bg-layer" data-parallax="10" aria-hidden="true">
+      <img src="public/assets/qant/renders/datacenter-corridor.webp" alt="" loading="lazy" decoding="async" />
+    </div>
+    <div class="q-wrap" data-readable>
+      <div class="scrim"></div>
+      <div class="q-eyebrow"><span class="dot"></span>Deployment</div>
+      <h2 class="reveal">Running today in <em>real data centres.</em></h2>
+      <div class="deploy-locs">
+        <div class="loc reveal"><div class="p">LRZ</div><div class="d">Leibniz Supercomputing Centre</div></div>
+        <div class="loc reveal"><div class="p">Jülich</div><div class="d">Forschungszentrum · JSC</div></div>
+        <div class="loc reveal"><div class="p">IONOS</div><div class="d">Sovereign cloud</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FABRICATION triptych -->
+  <section class="q-sec fabrication" id="fabrication">
+    <div class="q-wrap" data-readable>
+      <div class="scrim"></div>
+      <div class="q-eyebrow"><span class="dot"></span>Craft</div>
+      <h2 class="reveal">Engineered in <em>Stuttgart.</em></h2>
+      <p class="sub reveal">From wafer to working photonics — designed, fabricated and characterised in-house.</p>
+      <div class="fab-strip">
+        <figure class="stage stage--reveal" data-lit>
+          <img src="public/assets/qant/renders/wafer-laser.webp" alt="Wafer aligned on an optics bench under laser" loading="lazy" decoding="async" />
+          <figcaption class="fab-cap">Wafer-scale alignment</figcaption>
+        </figure>
+        <figure class="stage stage--reveal" data-lit>
+          <img src="public/assets/qant/targeted/06_green_laser_photonics.webp" alt="Green-laser optical characterisation" loading="lazy" decoding="async" />
+          <figcaption class="fab-cap">Optical characterisation</figcaption>
+        </figure>
+        <figure class="stage stage--reveal" data-lit>
+          <img src="public/assets/qant/targeted/03_precision_wafer_fabrication.webp" alt="Precision wafer fabrication machine" loading="lazy" decoding="async" />
+          <figcaption class="fab-cap">Precision fabrication</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
   <!-- 5 · CTA -->
   <section class="cta" id="cta">
-    <div class="wrap">
+    <div class="bg-layer" data-parallax="8" aria-hidden="true">
+      <img src="public/assets/qant/targeted/01_human_lab_teamwork.webp" alt="" loading="lazy" decoding="async" />
+    </div>
+    <div class="wrap" data-readable>
+      <div class="scrim"></div>
       <h2 class="reveal">Ready to compute <em>with light?</em></h2>
       <p class="sub reveal" style="max-width:40ch">Bring photonic acceleration to your AI and HPC stack — talk to the team building it.</p>
       <div class="actions reveal">
@@ -353,6 +516,9 @@ const finalPass = new ShaderPass({
 });
 composer.addPass(finalPass);
 
+/* expose the tested beam to the additive enhancement layer (read/modulate only) */
+window.__QANT_BEAM__ = { U, bloom, finalPass };
+
 function resize(){
   const w=innerWidth,h=innerHeight;
   renderer.setSize(w,h); composer.setSize(w,h);
@@ -379,7 +545,7 @@ function loop(){
   composer.render();
   requestAnimationFrame(loop);
 }
-if(!reduce) loop();
+if(!reduce && !window.__QANT_MOBILE__) loop();
 
 /* ---------- headline build ---------- */
 const HEAD=[["Computing"],["with"],["light.",true]];
@@ -446,9 +612,12 @@ if(reduce){
     trigger:"#main", start:"top top", end:"bottom bottom", scrub:.6,
     onUpdate(self){
       const p=self.progress;
-      U.uEnergy.value = track(p, [[0,.95],[.22,.55],[.5,1.0],[.72,1.25],[.9,1.05],[1,1.0]]);
-      U.uNodeY.value  = track(p, [[0,0],[.5,.04],[1,-.05]]);
+      const _e=track(p, [[0,.95],[.22,.55],[.5,1.0],[.72,1.25],[.9,1.05],[1,1.0]]);
+      const _n=track(p, [[0,0],[.5,.04],[1,-.05]]);
+      U.uEnergy.value=_e; U.uNodeY.value=_n;
       U.uDisrupt.value= track(p, [[.12,0],[.28,1],[.42,0]]);
+      /* mirror base values so the enhancement layer can damp/boost on top */
+      const _b=window.__QANT_BEAM__; if(_b){ _b.baseEnergy=_e; _b.baseNodeY=_n; }
       prog.style.width=(p*100)+"%";
     },
   });
@@ -473,5 +642,6 @@ if(reduce){
   });
 }
 </script>
+<script type="module" src="public/qant-enhance.js"></script>
 </body>
 </html>

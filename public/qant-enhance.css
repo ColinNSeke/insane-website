@@ -1,0 +1,242 @@
+/* ============================================================
+   Q.ANT — 50k enhancement layer  (ADDITIVE / isolated)
+   Loaded only when the feature flag is on (see bootstrap).
+   Owns: image staging, readability scrims, bento, oversized
+   type, signature moment, mobile fallback. Never rewrites the
+   tested beam shader or the existing scroll runtime.
+   ============================================================ */
+
+:root{
+  --grade-tint: rgba(28,46,120,.30);   /* indigo duotone wash */
+  --scrim-void: 4,6,10;                 /* matches --void rgb  */
+}
+
+/* When the flag is active we hint the document so existing
+   rules can defer to ours without being rewritten. */
+html.qant-enh{ }
+
+/* hero headline keeps a whisper-soft scrim so it always clears AA,
+   without ever dimming the live hero beam (no data-readable here). */
+.hero .wrap{ position:relative; z-index:2; }
+.hero .wrap::before{ content:""; position:absolute; z-index:-1; inset:-12% -8% -20% -10%;
+  background:radial-gradient(70% 80% at 22% 42%, rgba(var(--scrim-void),.6), rgba(var(--scrim-void),0) 70%);
+  pointer-events:none; }
+
+/* new-section eyebrow dot matches the base pulse */
+.q-eyebrow .dot{ animation:pulse 2.4s ease-in-out infinite; }
+
+/* ---------- global film grain (one shared layer) ---------- */
+.grain{
+  position:fixed; inset:0; z-index:6; pointer-events:none;
+  opacity:.05; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:180px 180px;
+}
+
+/* ============================================================
+   IMAGE LANGUAGE — every staged image runs the same grade so
+   mixed sources (renders + photos) read as one body of work.
+   ============================================================ */
+.stage{ position:relative; overflow:hidden; display:block; }
+.stage img{
+  display:block; width:100%; height:100%; object-fit:cover;
+  filter:saturate(.82) contrast(1.06) brightness(.86);
+  transform:scale(1.04);
+  transition:filter 1.1s cubic-bezier(.4,0,.1,1), transform 1.6s cubic-bezier(.4,0,.1,1);
+  will-change:transform,filter;
+}
+/* duotone wash that lifts toward true colour on dwell/hover */
+.stage::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(180deg, rgba(var(--scrim-void),.10), rgba(var(--scrim-void),.55)), var(--grade-tint);
+  mix-blend-mode:multiply; opacity:1; transition:opacity 1.1s ease;
+}
+.stage:hover img, .stage.lit img{ filter:saturate(1.05) contrast(1.04) brightness(1); transform:scale(1); }
+.stage:hover::after, .stage.lit::after{ opacity:.35; }
+
+/* clip-path reveal — driven by JS (.in toggles open) */
+.stage--reveal img{ clip-path:inset(0 100% 0 0); transition:clip-path 1.25s cubic-bezier(.76,0,.24,1), filter 1.1s ease, transform 1.6s ease; }
+.stage--reveal.in img{ clip-path:inset(0 0 0 0); }
+
+/* slow ken-burns drift while a section is dwelt on */
+@keyframes kb{ 0%{transform:scale(1.04) translate3d(0,0,0)} 100%{transform:scale(1.14) translate3d(-1.5%,-1.5%,0)} }
+.kb.in img{ animation:kb 14s ease-in-out infinite alternate; }
+
+/* ============================================================
+   READABILITY — soft radial scrim behind text. Never a box:
+   a feathered ellipse, only as strong as needed. The beam is
+   additionally dimmed globally while a text block is centred
+   (handled in JS via the beam uniform).
+   ============================================================ */
+.lift{ position:relative; z-index:3; }
+[data-readable]{ position:relative; }
+.scrim{
+  position:absolute; z-index:-1; pointer-events:none; inset:-8% -6%;
+  background:radial-gradient(120% 90% at 30% 50%,
+              rgba(var(--scrim-void),.74) 0%,
+              rgba(var(--scrim-void),.55) 34%,
+              rgba(var(--scrim-void),.18) 64%,
+              rgba(var(--scrim-void),0) 82%);
+  opacity:0; transition:opacity .7s ease;
+}
+.scrim.on{ opacity:1; }
+/* right-aligned principle column reads better with a mirrored scrim */
+.principle .scrim{ background:radial-gradient(120% 90% at 70% 50%,
+              rgba(var(--scrim-void),.74) 0%,
+              rgba(var(--scrim-void),.55) 34%,
+              rgba(var(--scrim-void),.18) 64%,
+              rgba(var(--scrim-void),0) 82%); }
+
+/* full-bleed section background image (lazy, graded). Extra vertical
+   headroom so the parallax shift never reveals an edge. */
+.bg-layer{ position:absolute; inset:0; z-index:0; overflow:hidden; }
+.bg-layer img{ position:absolute; left:0; top:-16%; width:100%; height:132%; object-fit:cover;
+  filter:saturate(.8) contrast(1.05) brightness(.5); }
+.bg-layer::after{ content:""; position:absolute; inset:0;
+  background:linear-gradient(90deg, rgba(var(--scrim-void),.92) 0%, rgba(var(--scrim-void),.6) 42%, rgba(var(--scrim-void),.35) 100%); }
+
+/* lift existing section content above any new bg layer */
+.problem .wrap, .principle .wrap, .proof .wrap, .cta .wrap{ position:relative; z-index:3; }
+
+/* tighten the existing problem cells so an image can sit behind */
+.problem .plist .cell{ background:rgba(var(--scrim-void),.78); }
+
+/* ============================================================
+   NEW SECTIONS
+   ============================================================ */
+.q-sec{ min-height:100vh; display:flex; align-items:center;
+  padding:120px clamp(20px,4vw,64px); position:relative; }
+.q-wrap{ max-width:1180px; width:100%; margin:0 auto; position:relative; z-index:3; }
+.q-eyebrow{ display:flex; align-items:center; gap:12px; margin-bottom:28px;
+  font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:.38em;
+  text-transform:uppercase; color:var(--cyan); }
+.q-eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:var(--cyan);
+  box-shadow:0 0 12px 2px rgba(95,214,255,.7); }
+
+/* ---------- ARCHITECTURE: exploded chip reveal ---------- */
+.architecture{ overflow:hidden; }
+.arch-grid{ display:grid; grid-template-columns:1.05fr .95fr; gap:clamp(28px,5vw,72px); align-items:center; }
+.arch-fig{ aspect-ratio:16/10; border:1px solid var(--line); border-radius:3px; }
+.arch-fig::before{ content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
+  box-shadow:inset 0 0 90px rgba(95,214,255,.10); }
+.arch-copy h2{ margin-bottom:18px; }
+@media(max-width:860px){ .arch-grid{ grid-template-columns:1fr; } }
+
+/* ---------- SIGNATURE: the beam is born from the chip ----------
+   The section stays transparent so the LIVE webgl beam (fixed,
+   behind <main>) shows through. The product render is composited
+   with mix-blend-mode:screen, so its black background drops out
+   and only its light core + the live beam coexist — the beam
+   appears to physically pour out of the real chip. */
+.signature{ height:100vh; padding:0; overflow:hidden; align-items:flex-end; justify-content:center;
+  background:transparent; }
+.sig-copy{ position:relative; z-index:4; text-align:center; max-width:20ch; margin:0 auto;
+  padding:0 24px 12vh; }
+.sig-copy .q-eyebrow{ justify-content:center; }
+.sig-copy h2{ margin:0 auto; }
+.sig-copy::before{ content:""; position:absolute; z-index:-1; inset:-40% -30% -20%;
+  background:radial-gradient(70% 80% at 50% 70%, rgba(var(--scrim-void),.82), rgba(var(--scrim-void),0) 75%); }
+
+/* fixed compositing layer: sits BETWEEN the live beam (#gl, z0) and
+   <main> (z2). mix-blend:screen drops the render's black background
+   so the live beam shows through and appears to erupt from the chip. */
+.sig-layer{ position:fixed; inset:0; z-index:1; pointer-events:none; opacity:0;
+  transition:opacity 1s ease; will-change:opacity; }
+.sig-layer img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center;
+  mix-blend-mode:screen; filter:contrast(1.12) brightness(1) saturate(.95);
+  transform:scale(1.08); transition:transform 2.4s cubic-bezier(.4,0,.1,1); }
+.sig-layer.show{ opacity:1; }
+.sig-layer.show img{ transform:scale(1); }
+.sig-flash{ position:absolute; inset:0;
+  background:radial-gradient(38% 52% at 50% 46%, rgba(95,214,255,.5), rgba(95,214,255,0) 70%);
+  opacity:0; mix-blend-mode:screen; }
+html.qant-static .sig-layer{ z-index:1; } /* still composites over the static void on mobile */
+
+/* ---------- PRODUCT ---------- */
+.product-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:54px; }
+.product-grid .stage{ aspect-ratio:16/11; border:1px solid var(--line); border-radius:3px; }
+.product-cap{ position:absolute; left:0; bottom:0; z-index:2; padding:24px 26px; }
+.product-cap .k{ font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.22em; color:var(--cyan); }
+.product-cap .t{ font-family:"Fraunces",serif; font-weight:300; font-size:1.5rem; margin-top:8px; }
+@media(max-width:760px){ .product-grid{ grid-template-columns:1fr; } }
+
+/* ---------- APPLICATIONS — bento ---------- */
+.bento{ display:grid; grid-template-columns:repeat(6,1fr); grid-auto-rows:clamp(200px,26vh,260px); gap:14px; margin-top:56px; }
+.card{ position:relative; overflow:hidden; border:1px solid var(--line); border-radius:3px; }
+.card .stage{ position:absolute; inset:0; }
+.card .meta{ position:absolute; inset:0; z-index:2; display:flex; flex-direction:column;
+  justify-content:flex-end; padding:26px; pointer-events:none;
+  background:linear-gradient(0deg, rgba(var(--scrim-void),.78) 0%, rgba(var(--scrim-void),.15) 55%, rgba(var(--scrim-void),0) 100%); }
+.card .meta .k{ font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.22em; color:var(--cyan); }
+.card .meta h3{ font-family:"Fraunces",serif; font-weight:300; font-size:1.7rem; line-height:1.04; margin-top:10px; }
+.card .meta p{ font-size:13px; line-height:1.5; color:#aeb9c6; margin-top:10px; max-width:30ch;
+  opacity:0; transform:translateY(8px); transition:opacity .5s ease, transform .5s ease; }
+.card:hover .meta p{ opacity:1; transform:translateY(0); }
+.card.s2{ grid-column:span 2; }
+.card.s3{ grid-column:span 3; }
+.card.s4{ grid-column:span 4; }
+@media(max-width:1024px){ .bento{ grid-template-columns:repeat(2,1fr); } .card.s2,.card.s3,.card.s4{ grid-column:span 2; } }
+@media(max-width:560px){ .bento{ grid-template-columns:1fr; grid-auto-rows:200px; } .card{ grid-column:span 1 !important; } }
+
+/* ---------- OVERSIZED STATEMENT ---------- */
+.statement{ height:118vh; align-items:center; overflow:hidden; }
+.statement .bg-layer img{ filter:saturate(.8) contrast(1.08) brightness(.62); }
+.statement .bg-layer::after{ background:radial-gradient(80% 80% at 50% 46%, rgba(var(--scrim-void),.2), rgba(var(--scrim-void),.86) 78%); }
+.statement-h{ font-family:"Fraunces",serif; font-weight:300; line-height:.9; letter-spacing:-.03em;
+  font-size:clamp(3rem,13vw,13rem); max-width:16ch; }
+.statement-h em{ font-style:italic; color:#dff4ff; text-shadow:0 0 50px rgba(95,214,255,.45); }
+.statement .word{ display:inline-block; overflow:hidden; vertical-align:top; }
+.statement .word>span{ display:inline-block; }
+.statement .sub{ margin-top:28px; max-width:46ch; color:#aeb9c6; }
+
+/* ---------- DEPLOYMENT ---------- */
+.deployment{ overflow:hidden; }
+.deploy-locs{ display:flex; gap:clamp(28px,6vw,90px); margin-top:54px; flex-wrap:wrap; }
+.deploy-locs .loc .p{ font-family:"Fraunces",serif; font-weight:300; font-size:clamp(2rem,4vw,3rem); color:#dff4ff; }
+.deploy-locs .loc .d{ font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--mute); margin-top:10px; }
+
+/* ---------- FABRICATION triptych ---------- */
+.fab-strip{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:54px; }
+.fab-strip .stage{ aspect-ratio:4/5; border:1px solid var(--line); border-radius:3px; }
+.fab-cap{ position:absolute; left:0; bottom:0; z-index:2; padding:20px 22px;
+  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:#ccd6e0;
+  background:linear-gradient(0deg, rgba(var(--scrim-void),.8), transparent); width:100%; }
+@media(max-width:760px){ .fab-strip{ grid-template-columns:1fr; } .fab-strip .stage{ aspect-ratio:16/10; } }
+
+/* ---------- CTA human image ---------- */
+.cta .bg-layer img{ filter:saturate(.85) contrast(1.04) brightness(.42); }
+.cta .bg-layer::after{ background:radial-gradient(70% 70% at 50% 60%, rgba(var(--scrim-void),.45), rgba(var(--scrim-void),.92) 80%); }
+
+/* ============================================================
+   MOBILE / NO-WEBGL FALLBACK — baked static hero, no live GL
+   ============================================================ */
+.hero-poster{ position:fixed; inset:0; z-index:0; display:none; overflow:hidden; }
+.hero-poster img{ width:100%; height:100%; object-fit:cover; filter:saturate(.85) contrast(1.05) brightness(.7); }
+.hero-poster::after{ content:""; position:absolute; inset:0;
+  background:radial-gradient(90% 70% at 35% 45%, rgba(var(--scrim-void),.25), rgba(var(--scrim-void),.9) 85%); }
+html.qant-static #gl{ display:none !important; }
+html.qant-static .hero-poster{ display:block; }
+html.qant-static .grain{ opacity:.04; }
+
+/* ---------- PRINCIPLE left media (beam reads on the left) ---------- */
+.principle{ overflow:hidden; }
+.principle-media{ position:absolute; left:clamp(20px,4vw,64px); top:50%; transform:translateY(-50%);
+  width:min(40vw,420px); z-index:1; display:grid; gap:16px; }
+.principle-media .stage{ border:1px solid var(--line); border-radius:3px; aspect-ratio:5/4; }
+.principle-media .stage.wg{ aspect-ratio:16/7; margin-left:22%; }
+@media(max-width:980px){ .principle-media{ display:none; } }
+
+/* ---------- PROOF — stats pushed bigger for the 50k tier ---------- */
+.proof .stat .v{ font-size:clamp(4rem,11vw,9.5rem); }
+.proof .stat .l{ max-width:24ch; }
+
+/* reduced-motion: freeze every drift / reveal in the open state */
+@media(prefers-reduced-motion:reduce){
+  .stage img{ transform:none; transition:none; }
+  .stage--reveal img{ clip-path:inset(0 0 0 0); }
+  .kb.in img{ animation:none; }
+  .scrim{ transition:none; }
+  .q-eyebrow .dot{ animation:none; }
+  .sig-layer{ transition:none; }
+}
