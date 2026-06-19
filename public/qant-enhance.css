@@ -231,6 +231,51 @@ html.qant-static .grain{ opacity:.04; }
 .proof .stat .v{ font-size:clamp(4rem,11vw,9.5rem); }
 .proof .stat .l{ max-width:24ch; }
 
+/* ============================================================
+   DURCHGANG 2 — overlap fixes + choreography styles
+   (loaded after the base <style>, so these win the cascade)
+   ============================================================ */
+
+/* PRIO 1 — typography overlaps -------------------------------- */
+/* hero words were sticking together: real spacing between the
+   inline-block .word elements (the clip wrappers swallow whitespace) */
+.hero h1 .word{ margin-right:.16em; }
+.hero h1 .word:last-child{ margin-right:0; }
+
+/* headlines: breathing line-height + a guaranteed gap to the next
+   block so a wrapped headline never sits on the body copy */
+main h2{ line-height:1.12; }
+main h2:not(:last-child){ margin-bottom:.5em; }
+main h3{ line-height:1.12; }
+
+/* oversized statement: tight but never self-overlapping; the clip
+   wrappers keep room for descenders */
+.statement-h{ line-height:1.0; }
+.statement .word{ display:inline-block; overflow:hidden; vertical-align:top;
+  padding-bottom:.14em; margin-bottom:-.14em; }
+.statement .word>span{ display:inline-block; }
+
+[data-wipe]{ will-change:clip-path; }
+
+/* clean isolated layer per section — no z-index bleed, no text from
+   one section painting over a neighbour during scroll transitions */
+main > section{ isolation:isolate; }
+
+/* principle media: flex-centred (no translateY) so the parallax
+   transform can't fight the centering */
+.principle-media{ top:0; bottom:0; transform:none; height:auto;
+  display:flex; flex-direction:column; justify-content:center; }
+
+/* PRIO 4 — Applications horizontal pin-scroll ----------------- */
+.applications.pinmode{ height:100vh; min-height:100vh; overflow:hidden;
+  padding-top:0; padding-bottom:0; }
+.applications.pinmode .q-wrap{ height:100%; max-width:none; display:flex;
+  flex-direction:column; justify-content:center; gap:30px; padding:0 clamp(20px,4vw,64px); }
+.applications.pinmode .bento{ display:flex; grid-template-columns:none; grid-auto-rows:auto;
+  width:max-content; gap:24px; margin-top:0; will-change:transform; }
+.applications.pinmode .card{ grid-column:auto !important; flex:0 0 auto;
+  width:min(44vw,560px); height:min(58vh,520px); }
+
 /* reduced-motion: freeze every drift / reveal in the open state */
 @media(prefers-reduced-motion:reduce){
   .stage img{ transform:none; transition:none; }
@@ -239,4 +284,5 @@ html.qant-static .grain{ opacity:.04; }
   .scrim{ transition:none; }
   .q-eyebrow .dot{ animation:none; }
   .sig-layer{ transition:none; }
+  [data-wipe]{ clip-path:none !important; }
 }

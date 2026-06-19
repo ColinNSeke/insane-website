@@ -10,7 +10,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
-<link rel="stylesheet" href="public/qant-enhance.css" />
 <script>
   /* 50k enhancement — feature flag (default ON). Set false to ship
      the bare prototype. Mobile / coarse-pointer devices get a baked
@@ -156,6 +155,8 @@
   :focus-visible{outline:1px solid var(--cyan);outline-offset:3px}
   @media(prefers-reduced-motion:reduce){.eyebrow .dot,.rail::after{animation:none}}
 </style>
+<!-- enhancement layer loads AFTER the base style so it can override layout -->
+<link rel="stylesheet" href="public/qant-enhance.css" />
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -216,7 +217,7 @@
 
   <!-- 3 · PRINCIPLE (payoff: the live beam gets named) -->
   <section class="principle" id="principle">
-    <div class="principle-media" aria-hidden="true">
+    <div class="principle-media" aria-hidden="true" data-parallax="-6">
       <figure class="stage stage--reveal" data-lit>
         <img src="public/assets/qant/targeted/04_optics_bench_blue.webp" alt="Beam-splitter optics on a photonics bench" loading="lazy" decoding="async" />
       </figure>
@@ -251,7 +252,7 @@
       <div class="arch-copy" data-readable>
         <div class="scrim"></div>
         <div class="q-eyebrow"><span class="dot"></span>Architecture</div>
-        <h2 class="reveal">A processor you can <em>see through.</em></h2>
+        <h2 data-wipe>A processor you can <em>see through.</em></h2>
         <p class="sub reveal">Thin-film lithium-niobate photonics, stacked layer on layer. Modulators, waveguides and detectors are co-integrated on a single die — the computation lives in the light passing between them.</p>
       </div>
     </div>
@@ -286,7 +287,7 @@
     <div class="q-wrap" data-readable>
       <div class="scrim"></div>
       <div class="q-eyebrow"><span class="dot"></span>The product</div>
-      <h2 class="reveal">Native photonic acceleration, <em>rack-ready.</em></h2>
+      <h2 data-wipe>Native photonic acceleration, <em>rack-ready.</em></h2>
       <p class="sub reveal">A drop-in Native Processing Server and a PCIe accelerator card — photonic compute that speaks the language your data centre already runs.</p>
       <div class="product-grid">
         <figure class="stage stage--reveal" data-lit>
@@ -306,7 +307,7 @@
     <div class="q-wrap" data-readable>
       <div class="scrim"></div>
       <div class="q-eyebrow"><span class="dot"></span>Applications</div>
-      <h2 class="reveal">Where light does the <em>heavy lifting.</em></h2>
+      <h2 data-wipe>Where light does the <em>heavy lifting.</em></h2>
       <div class="bento">
         <article class="card s3">
           <figure class="stage stage--reveal" data-lit><img src="public/assets/qant/targeted/10_photonic_chip_macro.webp" alt="Photonic processor die, close-up" loading="lazy" decoding="async" /></figure>
@@ -433,7 +434,7 @@ const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 /* ---------- main beam shader ---------- */
 const U = {
   uTime:{value:0}, uRes:{value:new THREE.Vector2()}, uMouse:{value:new THREE.Vector2()},
-  uIntro:{value:reduce?1:0}, uEnergy:{value:.95}, uNodeY:{value:0}, uDisrupt:{value:0},
+  uIntro:{value:reduce?1:0}, uEnergy:{value:.95}, uNodeY:{value:0}, uDisrupt:{value:0}, uFlow:{value:0},
 };
 const sceneMat = new THREE.ShaderMaterial({
   uniforms:U,
@@ -441,7 +442,7 @@ const sceneMat = new THREE.ShaderMaterial({
   fragmentShader:`
     precision highp float;
     varying vec2 vUv;
-    uniform float uTime,uIntro,uEnergy,uNodeY,uDisrupt;
+    uniform float uTime,uIntro,uEnergy,uNodeY,uDisrupt,uFlow;
     uniform vec2 uRes,uMouse;
     vec3 spectrum(float x){
       x=clamp(x,0.,1.);
@@ -450,6 +451,12 @@ const sceneMat = new THREE.ShaderMaterial({
       return mix(r,c,smoothstep(.55,1.,x));
     }
     float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+    /* smooth value noise — continuous in time, no stepped strobe */
+    float vnoise(vec2 p){
+      vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
+      float a=hash(i), b=hash(i+vec2(1,0)), c=hash(i+vec2(0,1)), d=hash(i+vec2(1,1));
+      return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);
+    }
     void main(){
       vec2 p=vUv-.5; p.x*=uRes.x/uRes.y;
       float t=uTime; vec2 m=uMouse*.12;
@@ -463,9 +470,10 @@ const sceneMat = new THREE.ShaderMaterial({
         float d=abs(p.y-by);
         float w=mix(.011,.0035,cx);
         float core=exp(-d*d/(2.*w*w));
-        float flow=.45+.55*pow(.5+.5*sin(p.x*22.-t*2.2+fi*9.),3.);
-        float nz=hash(vec2(floor(p.x*60.),floor(t*14.)+fi));
-        flow*=mix(1.,.35+.5*nz,uDisrupt);
+        /* scroll-velocity (uFlow) speeds up the streaks + tightens frequency */
+        float flow=.45+.55*pow(.5+.5*sin(p.x*(22.+uFlow*16.)-t*(2.2+uFlow*4.5)+fi*9.),3.);
+        float nz=vnoise(vec2(p.x*26.+fi*7., t*1.25+fi*3.));
+        flow*=mix(1.,.4+.5*nz,uDisrupt);
         float mask=smoothstep(.07,-.02,p.x-kx);
         col+=spectrum(.18+cx*.5+fi*.08)*core*flow*mask;
       }
@@ -509,7 +517,8 @@ const finalPass = new ShaderPass({
       vec2 uv=vUv; vec2 d=uv-.5; float r2=dot(d,d);
       float ca=.0016+r2*.006; vec2 dir=normalize(d+1e-5);
       vec3 col=vec3(texture2D(tDiffuse,uv-dir*ca).r,texture2D(tDiffuse,uv).g,texture2D(tDiffuse,uv+dir*ca).b);
-      col+=(hash(uv*uRes+fract(uTime)*97.)-.5)*.045;
+      /* grain on a slow 8fps cadence + lower amplitude → calm at standstill */
+      col+=(hash(uv*uRes+floor(uTime*8.)*9.7)-.5)*.022;
       col*=smoothstep(1.15,.25,r2*1.6);
       gl_FragColor=vec4(col,1.);
     }`,
@@ -535,12 +544,39 @@ addEventListener("pointermove", e=>{
 });
 const beamAnno=document.getElementById("beamAnno");
 
-/* ---------- render loop ---------- */
+/* ---------- render loop ----------
+   Single owner of the beam uniforms. The scroll spine and the
+   enhancement layer only ever set *targets* (on __QANT_BEAM__);
+   everything is approached here with a damped lerp so nothing
+   jumps — the beam drifts even when the page is still. */
 const clock=new THREE.Clock();
+const B=window.__QANT_BEAM__;
+let velSmooth=0, dampNow=1, boostNow=1, nodeAddNow=0;
 function loop(){
   const t=clock.getElapsedTime();
   U.uTime.value=t; finalPass.uniforms.uTime.value=t;
   mouse.lerp(target,.06); U.uMouse.value.copy(mouse);
+
+  /* scroll velocity → normalised + smoothed (PRIO 3: beam plays with scroll) */
+  let v=0; try{ v=ScrollTrigger.getVelocity(); }catch(e){}
+  const vN=Math.min(Math.abs(v)/2600,1);
+  velSmooth += (vN-velSmooth)*0.08;
+  U.uFlow.value=velSmooth;
+
+  /* damped approach of all modulation targets */
+  const dT=(B&&B.dampTarget!=null)?B.dampTarget:1;
+  const bT=(B&&B.boostTarget!=null)?B.boostTarget:1;
+  const nT=(B&&B.nodeAddTarget!=null)?B.nodeAddTarget:0;
+  dampNow+=(dT-dampNow)*0.06; boostNow+=(bT-boostNow)*0.05; nodeAddNow+=(nT-nodeAddNow)*0.05;
+  const baseE=(B&&B.baseEnergy!=null)?B.baseEnergy:0.95;
+  const baseN=(B&&B.baseNodeY!=null)?B.baseNodeY:0;
+  const dis  =(B&&B.disruptTarget!=null)?B.disruptTarget:0;
+  const eTarget=baseE*dampNow*boostNow*(1+velSmooth*0.18);
+  U.uEnergy.value += (eTarget-U.uEnergy.value)*0.10;
+  U.uNodeY.value  += ((baseN+nodeAddNow+velSmooth*0.02)-U.uNodeY.value)*0.08;
+  U.uDisrupt.value+= ((dis+velSmooth*0.25)-U.uDisrupt.value)*0.08;
+  if(U.uIntro.value>0.99) bloom.strength = 0.85 + (boostNow-1)*0.9 + velSmooth*0.15;
+
   beamAnno.style.transform=`translate(${mouse.x*22}px,${mouse.y*-16}px)`;
   composer.render();
   requestAnimationFrame(loop);
@@ -587,7 +623,7 @@ if(reduce){
   document.querySelectorAll("section:not(#hero) .reveal").forEach(el=>{
     gsap.fromTo(el,{ y:34, opacity:0, filter:"blur(8px)" },
       { y:0, opacity:1, filter:"blur(0px)", duration:1.0, ease:"power3.out",
-        scrollTrigger:{ trigger:el, start:"top 82%" } });
+        scrollTrigger:{ trigger:el, start:"top 85%", toggleActions:"play none none reverse" } });
   });
 
   /* ---------- kinetic numbers ---------- */
@@ -612,19 +648,21 @@ if(reduce){
     trigger:"#main", start:"top top", end:"bottom bottom", scrub:.6,
     onUpdate(self){
       const p=self.progress;
-      const _e=track(p, [[0,.95],[.22,.55],[.5,1.0],[.72,1.25],[.9,1.05],[1,1.0]]);
-      const _n=track(p, [[0,0],[.5,.04],[1,-.05]]);
-      U.uEnergy.value=_e; U.uNodeY.value=_n;
-      U.uDisrupt.value= track(p, [[.12,0],[.28,1],[.42,0]]);
-      /* mirror base values so the enhancement layer can damp/boost on top */
-      const _b=window.__QANT_BEAM__; if(_b){ _b.baseEnergy=_e; _b.baseNodeY=_n; }
+      /* set TARGETS only — the render loop damps toward them (no hard jumps) */
+      const _e=track(p, [[0,.95],[.22,.6],[.5,1.0],[.72,1.2],[.9,1.05],[1,1.0]]);
+      const _n=track(p, [[0,0],[.2,.05],[.4,-.045],[.6,.06],[.8,-.05],[1,0]]); // travel down the spine
+      const _d=track(p, [[.12,0],[.28,1],[.42,0]]);
+      const _b=window.__QANT_BEAM__;
+      if(_b){ _b.baseEnergy=_e; _b.baseNodeY=_n; _b.disruptTarget=_d; }
+      else { U.uEnergy.value=_e; U.uNodeY.value=_n; U.uDisrupt.value=_d; }
       prog.style.width=(p*100)+"%";
     },
   });
 
-  /* progressive disclosure: annotate the live beam only at "how it works" */
+  /* progressive disclosure: annotate the live beam ONLY while "how it works"
+     sits in the centre band (tight range → never bleeds into neighbours) */
   ScrollTrigger.create({
-    trigger:"#principle", start:"top 60%", end:"bottom 40%",
+    trigger:"#principle", start:"top 38%", end:"bottom 62%",
     onToggle(self){ beamAnno.style.opacity = self.isActive ? "1" : "0"; },
   });
 
