@@ -156,7 +156,7 @@
   @media(prefers-reduced-motion:reduce){.eyebrow .dot,.rail::after{animation:none}}
 </style>
 <!-- enhancement layer loads AFTER the base style so it can override layout -->
-<link rel="stylesheet" href="public/qant-enhance.css?v=7" />
+<link rel="stylesheet" href="public/qant-enhance.css?v=8" />
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -165,7 +165,10 @@
   <img src="public/assets/qant/renders/nps-core-beam.webp" alt="" loading="lazy" decoding="async" />
   <div class="sig-flash"></div>
 </div>
-<div class="side-beam" id="sideBeam" aria-hidden="true"><div class="sb-trail"></div><div class="sb-head"></div></div>
+<div id="scroll-beam" aria-hidden="true" style="position:fixed;left:4vw;top:0;width:3px;height:100vh;z-index:5;pointer-events:none">
+  <div id="beam-head" style="position:absolute;left:50%;top:0;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:50%;background:#5fd6ff;box-shadow:0 0 20px 8px rgba(95,214,255,0.6),0 0 60px 20px rgba(95,214,255,0.3);opacity:0"></div>
+  <div id="beam-trail" style="position:absolute;left:0;top:0;width:100%;height:0%;background:linear-gradient(to bottom,rgba(95,214,255,0.03),rgba(95,214,255,0.2))"></div>
+</div>
 <div class="grain" aria-hidden="true"></div>
 <div class="prog" id="prog"></div>
 
@@ -688,6 +691,6 @@ if(reduce){
   });
 }
 </script>
-<script type="module" src="public/qant-enhance.js?v=7"></script>
+<script type="module" src="public/qant-enhance.js?v=8"></script>
 </body>
 </html>
