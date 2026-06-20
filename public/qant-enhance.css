@@ -398,3 +398,27 @@ html.qant-static .beam-trail{ display:none; }     /* mobile = static fallback */
   .problem .plist .cell::after{ transform:scaleX(1); }
   .beam-trail{ display:none; }
 }
+
+/* ============================================================
+   DURCHGANG 6 — beam-journey focus: the shader beam is the star.
+   Retire the DOM trail + heavy image mechanics; content motion is
+   simple (gsap owns transforms). Strong centred scrim for the leap.
+   ============================================================ */
+.beam-trail{ display:none !important; }            /* shader beam replaces it */
+
+/* images fill the frame normally again; gsap animates scale on top */
+.stage img{ position:absolute; inset:0; top:0; left:0; width:100%; height:100%;
+  object-fit:cover; transform:none; transition:filter 1.1s ease; }
+.stage--reveal img{ clip-path:none; }
+
+/* the numbers section: a strong, soft, CENTRED scrim sits behind the
+   numerals and in front of the beam — readable even at full flare */
+.proof .scrim{ inset:-25% -15%; opacity:0;
+  background:radial-gradient(70% 70% at 50% 50%,
+    rgba(var(--scrim-void),.9) 0%, rgba(var(--scrim-void),.7) 38%,
+    rgba(var(--scrim-void),.25) 66%, rgba(var(--scrim-void),0) 82%); }
+
+@media(prefers-reduced-motion:reduce){
+  .stage img{ transform:none !important; }
+  .proof .scrim{ opacity:1; }
+}

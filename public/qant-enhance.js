@@ -1,11 +1,11 @@
 /* ============================================================
-   Q.ANT — 50k enhancement runtime  (ADDITIVE / isolated)
+   Q.ANT — enhancement runtime  (ADDITIVE / isolated)
    Feature-flagged: window.QANT_ENHANCE (default true).
 
-   The render loop owns the beam uniforms; this file only sets
-   *targets* on window.__QANT_BEAM__. Everything below is the
-   scroll choreography: every animation is scrub-coupled or
-   play/reverse, so the page lives in BOTH scroll directions.
+   THE BEAM IS THE STORY. The scroll-scrubbed beam journey lives in
+   the shader (driven by the page-progress keyframe map in the inline
+   module). This file only does SERVING content motion (simple,
+   reversible) + readability scrims. It must never out-shout the beam.
    ============================================================ */
 (function () {
   "use strict";
@@ -14,8 +14,6 @@
   const gsap = window.gsap;
   const ST = window.ScrollTrigger;
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const STATIC = document.documentElement.classList.contains("qant-static");
-  const wide = matchMedia("(min-width: 1024px)").matches && !STATIC;
   const EASE = "power3.out";
 
   document.documentElement.classList.add("qant-enh");
@@ -27,7 +25,8 @@
 
   if (!gsap || !ST) return;
 
-  /* ---- READABILITY: scrim + beam steps back behind active text ---- */
+  /* ---- READABILITY: scrim + beam steps back behind active text ----
+     (the numbers section is handled separately so its flare can read) */
   let activeText = 0;
   document.querySelectorAll("[data-readable]").forEach((block) => {
     const scrim = block.querySelector(".scrim");
@@ -37,19 +36,22 @@
         if (scrim) scrim.classList.toggle("on", self.isActive);
         activeText += self.isActive ? 1 : -1;
         if (activeText < 0) activeText = 0;
-        B.dampTarget = activeText > 0 ? 0.42 : 1;
+        B.dampTarget = activeText > 0 ? 0.5 : 1;
       },
     });
   });
 
-  /* SCHRITT 1 — calm ONLY the numbers section: cap energy + bloom there */
+  /* NUMBERS section: a strong radial scrim behind the numbers, faded in
+     with the leap (peaks when the section is centred). Beam is free to
+     flare; the scrim keeps 1,000 / 30× / 50× readable through it. */
   const proof = document.querySelector("#proof");
-  if (proof) {
+  const proofScrim = proof && proof.querySelector(".scrim");
+  if (proof && proofScrim) {
     ST.create({
-      trigger: proof, start: "top 85%", end: "bottom 15%",
-      onToggle(self) {
-        B.energyCap = self.isActive ? 0.5 : null;
-        B.bloomCap = self.isActive ? 0.6 : null;
+      trigger: proof, start: "top bottom", end: "bottom top", scrub: true,
+      onUpdate(self) {
+        const e = 1 - Math.abs(self.progress - 0.5) * 2; // triangular: 1 at centre
+        proofScrim.style.opacity = Math.max(0, e).toFixed(3);
       },
     });
   }
@@ -59,240 +61,90 @@
     const sl = document.querySelector("#sigLayer"); if (sl) sl.classList.add("show");
     document.querySelectorAll("#proof [data-count]").forEach((el) =>
       (el.textContent = (+el.dataset.count).toLocaleString("en-US") + (el.dataset.suffix || "")));
-    return; // everything static, no triggers
+    return;
   }
 
-  /* ============================================================
-     A) HEADLINES — mechanical split-text reveal (word by word)
-     overflow:hidden masks + translateY, scrub-coupled + stagger.
-     Scroll back = words slide back down. em markup preserved.
-     ============================================================ */
-  const splitHeadline = (el) => {
-    if (el.dataset.split === "done") return [];
-    const frag = document.createDocumentFragment();
-    const inners = [];
-    const addWord = (content, isEl) => {
-      const mask = document.createElement("span"); mask.className = "word-mask";
-      const inner = document.createElement("span"); inner.className = "word-in";
-      if (isEl) inner.appendChild(content); else inner.textContent = content;
-      mask.appendChild(inner); frag.appendChild(mask); inners.push(inner);
-    };
-    el.childNodes.forEach((node) => {
-      if (node.nodeType === 3) {
-        node.textContent.split(/(\s+)/).forEach((tok) => {
-          if (tok === "") return;
-          if (!tok.trim()) frag.appendChild(document.createTextNode(tok));
-          else addWord(tok, false);
-        });
-      } else if (node.nodeType === 1) {
-        addWord(node.cloneNode(true), true);
-      }
-    });
-    el.innerHTML = ""; el.appendChild(frag); el.dataset.split = "done";
-    return inners;
-  };
-
+  /* ---- HEADLINES: simple opacity + translateY, scrub, reversible ---- */
   document.querySelectorAll("[data-wipe]").forEach((el) => {
-    const inners = splitHeadline(el);
-    if (!inners.length) return;
-    gsap.fromTo(inners, { yPercent: 115 }, {
-      yPercent: 0, ease: EASE, stagger: 0.08,
-      scrollTrigger: { trigger: el, start: "top 82%", end: "top 50%", scrub: true },
+    gsap.fromTo(el, { autoAlpha: 0, y: 30 }, {
+      autoAlpha: 1, y: 0, ease: EASE,
+      scrollTrigger: { trigger: el, start: "top 85%", end: "top 55%", scrub: true },
+    });
+  });
+  /* body copy / eyebrows / small items keep a quiet reversible fade */
+  document.querySelectorAll("section:not(#hero) .reveal").forEach((el) => {
+    gsap.fromTo(el, { autoAlpha: 0, y: 24 }, {
+      autoAlpha: 1, y: 0, ease: EASE,
+      scrollTrigger: { trigger: el, start: "top 86%", end: "top 60%", scrub: true },
     });
   });
 
-  /* ============================================================
-     B) IMAGES — cinematic clip reveal + counter-parallax + zoom-settle
-     (non-bento; bento gets the horizontal pin treatment below)
-     ============================================================ */
+  /* ---- IMAGES: gentle zoom-settle only (no fancy clip/parallax) ---- */
   document.querySelectorAll(".stage").forEach((stage) => {
-    if (stage.closest("#applications")) return;
     const img = stage.querySelector("img");
-    gsap.fromTo(stage, { clipPath: "inset(0 0 100% 0)" }, {
-      clipPath: "inset(0 0 0% 0)", ease: EASE,
-      scrollTrigger: { trigger: stage, start: "top 88%", end: "top 46%", scrub: true },
+    if (!img) return;
+    gsap.fromTo(img, { scale: 1.08 }, {
+      scale: 1.0, ease: EASE,
+      scrollTrigger: { trigger: stage, start: "top 90%", end: "top 45%", scrub: true },
     });
-    if (img) {
-      gsap.fromTo(img, { scale: 1.12 }, {
-        scale: 1.0, ease: EASE,
-        scrollTrigger: { trigger: stage, start: "top 88%", end: "top 46%", scrub: true },
-      });
-      if (!STATIC) {
-        gsap.fromTo(img, { yPercent: -12 }, {
-          yPercent: 12, ease: "none",
-          scrollTrigger: { trigger: stage, start: "top bottom", end: "bottom top", scrub: true },
-        });
-      }
-    }
-    stage.hasAttribute("data-lit") && ST.create({
-      trigger: stage, start: "top 70%", end: "bottom 30%",
-      onToggle: (self) => stage.classList.toggle("lit", self.isActive),
-    });
+    if (stage.hasAttribute("data-lit"))
+      ST.create({ trigger: stage, start: "top 70%", end: "bottom 30%",
+        onToggle: (self) => stage.classList.toggle("lit", self.isActive) });
   });
 
-  /* keep the bg-layer + principle-media depth parallax */
+  /* ---- background depth parallax stays (subtle) ---- */
   document.querySelectorAll("[data-parallax]").forEach((el) => {
     const isBg = el.classList.contains("bg-layer");
     const node = isBg ? el.querySelector("img") : el;
     if (!node) return;
-    const amt = parseFloat(el.dataset.parallax) || 12;
+    const amt = parseFloat(el.dataset.parallax) || 10;
     gsap.fromTo(node, { yPercent: -amt }, {
       yPercent: amt, ease: "none",
       scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: true },
     });
   });
 
-  /* ============================================================
-     E) PROBLEM CELLS — staggered rise + a hairline that draws in
-     ============================================================ */
+  /* ---- NUMBERS: scroll-coupled countup + scale/y; labels stagger ---- */
+  if (proof) {
+    proof.querySelectorAll(".stat").forEach((stat) => {
+      const v = stat.querySelector(".v");
+      const end = +v.dataset.count, suf = v.dataset.suffix || "", o = { v: 0 };
+      const tl = gsap.timeline({
+        scrollTrigger: { trigger: stat, start: "top 82%", end: "top 42%", scrub: true },
+      });
+      tl.fromTo(v, { scale: 0.85, y: 30, autoAlpha: 0.3 },
+        { scale: 1, y: 0, autoAlpha: 1, ease: EASE }, 0);
+      tl.to(o, { v: end, ease: "none",
+        onUpdate: () => (v.textContent = Math.round(o.v).toLocaleString("en-US") + suf) }, 0);
+      const label = stat.querySelector(".l");
+      if (label) tl.fromTo(label, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, ease: EASE }, 0.12);
+    });
+  }
+
+  /* ---- CARDS: staggered opacity + translateY, scrub ---- */
+  const cards = document.querySelectorAll("#applications .card");
+  if (cards.length) {
+    gsap.fromTo(cards, { autoAlpha: 0, y: 60 }, {
+      autoAlpha: 1, y: 0, ease: EASE, stagger: 0.06,
+      scrollTrigger: { trigger: "#applications", start: "top 78%", end: "top 38%", scrub: true },
+    });
+  }
+  /* problem cells: same simple staggered rise */
   const cells = document.querySelectorAll("#problem .plist .cell");
   if (cells.length) {
-    gsap.fromTo(cells, { yPercent: 18, autoAlpha: 0 }, {
-      yPercent: 0, autoAlpha: 1, ease: EASE, stagger: 0.08,
-      scrollTrigger: { trigger: "#problem .plist", start: "top 82%", end: "top 48%", scrub: true },
-    });
-    gsap.fromTo(cells, { "--cd": 0 }, {
-      "--cd": 1, ease: EASE, stagger: 0.08,
-      scrollTrigger: { trigger: "#problem .plist", start: "top 80%", end: "top 45%", scrub: true },
+    gsap.fromTo(cells, { autoAlpha: 0, y: 40 }, {
+      autoAlpha: 1, y: 0, ease: EASE, stagger: 0.08,
+      scrollTrigger: { trigger: "#problem .plist", start: "top 84%", end: "top 50%", scrub: true },
     });
   }
 
-  /* principle step dividers draw in (accent, reversible) */
-  gsap.utils.toArray(".principle .pstep").forEach((el) => {
-    gsap.fromTo(el, { "--d": 0 }, {
-      "--d": 1, ease: EASE,
-      scrollTrigger: { trigger: el, start: "top 88%", end: "top 60%", scrub: true },
-    });
-  });
-
-  /* ============================================================
-     C) NUMBERS — scroll-coupled count + scale + y; labels stagger
-     ============================================================ */
-  const fmtCount = (el) => ({ el, end: +el.dataset.count, suf: el.dataset.suffix || "", o: { v: 0 } });
-
-  if (proof && wide) {
-    const stats = proof.querySelectorAll(".stat .v");
-    const labels = proof.querySelectorAll(".stat .l");
-    const tl = gsap.timeline({
-      scrollTrigger: { trigger: proof, start: "top top", end: "+=140%",
-        scrub: 0.6, pin: true, anticipatePin: 1, invalidateOnRefresh: true },
-    });
-    // faint background lift only (capped to ≤0.5 / bloom ≤0.6 by the cap ST)
-    tl.fromTo(B, { boostTarget: 1 }, { boostTarget: 1.35, ease: "power2.inOut", duration: 0.5 }, 0)
-      .to(B, { boostTarget: 1, ease: "power2.inOut", duration: 0.5 }, 0.5);
-    tl.fromTo(B, { disruptBoost: 0 }, { disruptBoost: 0.3, ease: "power1.inOut", duration: 0.5 }, 0)
-      .to(B, { disruptBoost: 0, ease: "power1.inOut", duration: 0.5 }, 0.5);
-    tl.fromTo(stats, { scale: 0.85, y: 30, autoAlpha: 0.3 },
-      { scale: 1, y: 0, autoAlpha: 1, ease: EASE, stagger: 0.06, duration: 0.55 }, 0.05);
-    tl.fromTo(labels, { y: 20, autoAlpha: 0 },
-      { y: 0, autoAlpha: 1, ease: EASE, stagger: 0.06, duration: 0.5 }, 0.18);
-    proof.querySelectorAll("[data-count]").forEach((el) => {
-      const c = fmtCount(el);
-      tl.to(c.o, { v: c.end, ease: "none", duration: 0.6,
-        onUpdate: () => (c.el.textContent = Math.round(c.o.v).toLocaleString("en-US") + c.suf) }, 0.05);
-    });
-  } else if (proof) {
-    proof.querySelectorAll(".stat").forEach((stat) => {
-      const c = fmtCount(stat.querySelector(".v"));
-      gsap.timeline({ scrollTrigger: { trigger: stat, start: "top 85%", end: "top 45%", scrub: true } })
-        .fromTo(stat, { y: 30, autoAlpha: 0.3 }, { y: 0, autoAlpha: 1, ease: EASE })
-        .to(c.o, { v: c.end, ease: "none",
-          onUpdate: () => (c.el.textContent = Math.round(c.o.v).toLocaleString("en-US") + c.suf) }, 0);
-    });
-  }
-
-  /* ---- SIGNATURE — beam erupts (toned) from the real chip ---- */
+  /* ---- SIGNATURE composite: just reveal the product render in view ---- */
   const sig = document.querySelector("#signature");
   const sigLayer = document.querySelector("#sigLayer");
   if (sig && sigLayer) {
-    const flash = sigLayer.querySelector(".sig-flash");
-    const fire = () => {
-      sigLayer.classList.add("show");
-      gsap.to(B, { boostTarget: 1.32, duration: 0.9, ease: "power2.out", overwrite: true });
-      if (flash) gsap.fromTo(flash, { opacity: 0 }, { opacity: 0.45, duration: 0.6, ease: "power2.out",
-        onComplete: () => gsap.to(flash, { opacity: 0.2, duration: 1.4, ease: "power2.inOut" }) });
-    };
-    const settle = () => {
-      sigLayer.classList.remove("show");
-      gsap.to(B, { boostTarget: 1, duration: 0.7, ease: "power2.out", overwrite: true });
-      if (flash) gsap.to(flash, { opacity: 0, duration: 0.8 });
-    };
-    ST.create({ trigger: sig, start: "top 65%", end: "bottom 35%",
-      onEnter: fire, onEnterBack: fire, onLeave: settle, onLeaveBack: settle });
-    gsap.fromTo(B, { nodeAddTarget: -0.025 }, { nodeAddTarget: 0.025, ease: "none",
-      scrollTrigger: { trigger: sig, start: "top bottom", end: "bottom top", scrub: 0.6 } });
-  }
-
-  /* ============================================================
-     THE VERTICAL LIGHT-TRAIL (lively again) — behind the content
-     ============================================================ */
-  let branchEl = null;
-  if (!STATIC) {
-    const trail = document.createElement("div");
-    trail.className = "beam-trail"; trail.setAttribute("aria-hidden", "true");
-    trail.innerHTML = '<div class="bt-line"></div><div class="bt-branch"><i></i><i></i></div><div class="bt-head"></div>';
-    document.body.appendChild(trail);
-    branchEl = trail.querySelector(".bt-branch");
     ST.create({
-      trigger: "#main", start: "top top", end: "bottom bottom", scrub: 0.8,
-      onUpdate(self) {
-        const p = self.progress;
-        trail.style.setProperty("--bx", (Math.sin(p * Math.PI * 3.0) * 12).toFixed(2) + "vw");
-        const v = Math.min(Math.abs(self.getVelocity()) / 2600, 1);
-        const fadeIn = Math.min(p / 0.06, 1);
-        trail.style.setProperty("--bv", ((0.28 + v * 0.6) * fadeIn).toFixed(3));
-      },
-    });
-    const principle = document.querySelector("#principle");
-    if (principle) {
-      ST.create({
-        trigger: principle, start: "top 75%", end: "bottom 50%",
-        onToggle: (self) => branchEl.classList.toggle("on", self.isActive),
-        onUpdate: (self) => branchEl.style.setProperty("--split",
-          Math.sin(Math.min(Math.max(self.progress, 0), 1) * Math.PI).toFixed(3)),
-      });
-    }
-  }
-
-  /* ============================================================
-     D + F) APPLICATIONS — horizontal pin; cards glide in with depth
-     ============================================================ */
-  if (wide) {
-    try {
-      const apps = document.querySelector("#applications");
-      const track = apps && apps.querySelector(".bento");
-      if (apps && track) {
-        apps.classList.add("pinmode");
-        const distance = () => Math.max(0, track.scrollWidth - innerWidth + 120);
-        const horiz = gsap.to(track, { x: () => -distance(), ease: "none",
-          scrollTrigger: { trigger: apps, start: "top top", end: () => "+=" + distance(),
-            scrub: 0.6, pin: true, anticipatePin: 1, invalidateOnRefresh: true } });
-        track.querySelectorAll(".card").forEach((card) => {
-          gsap.fromTo(card, { yPercent: 14, rotateX: 5, scale: 0.94, autoAlpha: 0.3 },
-            { yPercent: 0, rotateX: 0, scale: 1, autoAlpha: 1, ease: EASE,
-              scrollTrigger: { trigger: card, containerAnimation: horiz, start: "left 92%", end: "left 55%", scrub: true } });
-          gsap.fromTo(card, { "--glow": 0 }, { "--glow": 1, ease: "none",
-            scrollTrigger: { trigger: card, containerAnimation: horiz, start: "left 80%", end: "left 50%", scrub: true } });
-        });
-      }
-    } catch (e) { console.warn("[qant] applications pin disabled:", e); }
-  } else {
-    // non-pin fallback: cards still rise in, staggered + reversible
-    gsap.fromTo("#applications .card", { yPercent: 12, autoAlpha: 0 },
-      { yPercent: 0, autoAlpha: 1, ease: EASE, stagger: 0.08,
-        scrollTrigger: { trigger: "#applications", start: "top 78%", end: "top 40%", scrub: true } });
-  }
-
-  /* ============================================================
-     G) SECTION TRANSITIONS — cinematic overlap (parallax-out)
-     Outgoing section drifts up + softens as it leaves the top.
-     ============================================================ */
-  if (!STATIC) {
-    document.querySelectorAll("main > section").forEach((sec) => {
-      if (sec.id === "proof" || sec.id === "applications" || sec.classList.contains("signature")) return;
-      const inner = sec.querySelector(".wrap, .q-wrap") || sec;
-      gsap.to(inner, { yPercent: -7, autoAlpha: 0.55, ease: "none",
-        scrollTrigger: { trigger: sec, start: "bottom 78%", end: "bottom top", scrub: true } });
+      trigger: sig, start: "top 65%", end: "bottom 35%",
+      onToggle: (self) => sigLayer.classList.toggle("show", self.isActive),
     });
   }
 

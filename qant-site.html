@@ -260,7 +260,9 @@
 
   <!-- 4 · PROOF (kinetic numbers) -->
   <section class="proof" id="proof">
-    <div class="wrap" data-readable>
+    <!-- the beam FLARES here (the leap); a leap-intensity scrim keeps the
+         numbers readable, so no data-readable damp on this section -->
+    <div class="wrap">
       <div class="scrim"></div>
       <div class="eyebrow reveal"><span class="dot"></span>The leap</div>
       <h2 data-wipe>One optical element does the work of <em>thousands.</em></h2>
@@ -435,6 +437,7 @@ const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 const U = {
   uTime:{value:0}, uRes:{value:new THREE.Vector2()}, uMouse:{value:new THREE.Vector2()},
   uIntro:{value:reduce?1:0}, uEnergy:{value:.95}, uNodeY:{value:0}, uDisrupt:{value:0}, uFlow:{value:0},
+  uBeamSpread:{value:0}, uSplit:{value:0}, uFiber:{value:0},
 };
 const sceneMat = new THREE.ShaderMaterial({
   uniforms:U,
@@ -442,7 +445,7 @@ const sceneMat = new THREE.ShaderMaterial({
   fragmentShader:`
     precision highp float;
     varying vec2 vUv;
-    uniform float uTime,uIntro,uEnergy,uNodeY,uDisrupt,uFlow;
+    uniform float uTime,uIntro,uEnergy,uNodeY,uDisrupt,uFlow,uBeamSpread,uSplit,uFiber;
     uniform vec2 uRes,uMouse;
     vec3 spectrum(float x){
       x=clamp(x,0.,1.);
@@ -462,31 +465,39 @@ const sceneMat = new THREE.ShaderMaterial({
       float t=uTime; vec2 m=uMouse*.12;
       float kx=-.02+m.x; float ky=uNodeY+m.y*.5;
       vec3 col=vec3(0.);
-      const int N=6;
+      /* SCROLL-SCRUBBED BEAM JOURNEY — uBeamSpread (point→fan), uSplit
+         (Mach-Zehnder two paths), uFiber (many thin fibres), uDisrupt (chaos) */
+      float openAmt=clamp(uBeamSpread+uFiber,0.,1.);
+      const int N=9;
       for(int i=0;i<N;i++){
-        float fi=float(i)/float(N-1)-.5;
-        float cx=smoothstep(-.95,kx,p.x);
-        float by=mix(fi*.34,ky,cx)+.012*sin(p.x*6.+fi*4.+t*.4);
+        float fi=float(i)/float(N-1)-.5;            // -0.5..0.5
+        float cx=smoothstep(-.95,kx,p.x);           // 0 left -> 1 at node
+        float rt=smoothstep(kx,.72,p.x);            // 0 node -> 1 right edge
+        float originY=fi*.34*uBeamSpread + sign(fi)*.06*uSplit;
+        float wob=.03*uDisrupt*vnoise(vec2(p.x*7.+fi*3., t*1.6+fi*4.))*(1.-cx*.4);
+        float by=mix(originY,ky,cx) + fi*.5*uFiber*rt
+                 + .012*sin(p.x*6.+fi*4.+t*.4)*(uBeamSpread+uFiber) + wob;
         float d=abs(p.y-by);
-        float w=mix(.011,.0035,cx);
+        float w=mix(.011,.0035,cx)*mix(1.,.55,uFiber);
         float core=exp(-d*d/(2.*w*w));
-        /* scroll-velocity (uFlow) speeds up the streaks + tightens frequency */
         float flow=.45+.55*pow(.5+.5*sin(p.x*(22.+uFlow*16.)-t*(2.2+uFlow*4.5)+fi*9.),3.);
         float nz=vnoise(vec2(p.x*26.+fi*7., t*1.25+fi*3.));
-        flow*=mix(1.,.4+.5*nz,uDisrupt);
+        flow*=mix(1.,.35+.5*nz,uDisrupt);
         float mask=smoothstep(.07,-.02,p.x-kx);
-        col+=spectrum(.18+cx*.5+fi*.08)*core*flow*mask;
+        float vis=mix(exp(-fi*fi/.02),1.,openAmt); // collapsed=centre only; open=all
+        col+=spectrum(.18+cx*.5+fi*.08)*core*flow*mask*vis;
       }
       float dn=length((p-vec2(kx,ky))*vec2(1.,1.7));
       col+=spectrum(.95)*exp(-dn*dn/.0011)*1.25;
-      float sep=.05;
+      float sep=mix(.02,.07,uSplit);
+      float freq=95.+uSplit*55.;
       float d1=length(p-vec2(kx,ky+sep)),d2=length(p-vec2(kx,ky-sep));
-      float wv=sin(d1*95.-t*3.)+sin(d2*95.-t*3.);
+      float wv=sin(d1*freq-t*3.)+sin(d2*freq-t*3.);
       float inten=wv*wv*.25;
       float dist=p.x-kx;
       float interf=inten*smoothstep(-.01,.12,dist)*exp(-max(dist,0.)*1.4)
                    *exp(-pow((p.y-ky)/(.06+max(dist,0.)*.7),2.));
-      col+=spectrum(.32+.55*inten)*interf*.95;
+      col+=spectrum(.32+.55*inten)*interf*.95*(.35+.65*uSplit);
       float vign=1.-dot(p,p)*.55;
       col+=spectrum(0.)*.018*vign;
       float rx=mix(-1.3,1.5,uIntro);
@@ -579,8 +590,15 @@ function loop(){
   U.uEnergy.value += (eTarget-U.uEnergy.value)*0.10;
   U.uNodeY.value  += ((baseN+nodeAddNow+velSmooth*0.02)-U.uNodeY.value)*0.08;
   U.uDisrupt.value+= ((dis+db+velSmooth*0.25)-U.uDisrupt.value)*0.08;
-  /* bloom lively as before, but cap-able per section (numbers section ≤0.6) */
-  if(U.uIntro.value>0.99){ let bl=0.85+(boostNow-1)*0.9+velSmooth*0.15; if(bl>bCap) bl=bCap; bloom.strength=bl; }
+  /* the journey shape uniforms — lerped toward scroll-mapped targets */
+  const spT =(B&&B.spreadTarget!=null)?B.spreadTarget:0;
+  const slT =(B&&B.splitTarget!=null)?B.splitTarget:0;
+  const fbT =(B&&B.fiberTarget!=null)?B.fiberTarget:0;
+  U.uBeamSpread.value += (spT-U.uBeamSpread.value)*0.08;
+  U.uSplit.value      += (slT-U.uSplit.value)*0.08;
+  U.uFiber.value      += (fbT-U.uFiber.value)*0.08;
+  /* bloom follows energy/leap but is hard-ceilinged so it never floods */
+  if(U.uIntro.value>0.99){ let bl=Math.min(bCap, 0.5+(boostNow-1)*0.6+velSmooth*0.12); bloom.strength=Math.min(bl,1.1); }
 
   beamAnno.style.transform=`translate(${mouse.x*22}px,${mouse.y*-16}px)`;
   composer.render();
@@ -657,13 +675,20 @@ if(reduce){
     trigger:"#main", start:"top top", end:"bottom bottom", scrub:.6,
     onUpdate(self){
       const p=self.progress;
-      /* set TARGETS only — the render loop damps toward them (no hard jumps) */
-      const _e=track(p, [[0,.95],[.22,.6],[.5,1.0],[.72,1.2],[.9,1.05],[1,1.0]]);
-      const _n=track(p, [[0,0],[.2,.05],[.4,-.045],[.6,.06],[.8,-.05],[1,0]]); // travel down the spine
-      const _d=track(p, [[.12,0],[.28,1],[.42,0]]);
+      /* THE BEAM JOURNEY — one composed sequence, 1:1 to page scroll.
+         birth(0-.15) → disruption(.15-.30) → order/Mach-Zehnder(.30-.50)
+         → leap/flare(.50-.65) → fan into fibres(.65-.80) → refocus(.80-1) */
+      const _spread=track(p, [[0,0],[.15,1],[.6,1],[.8,.6],[1,.12]]);
+      const _split =track(p, [[0,0],[.30,0],[.42,1],[.55,.35],[.63,0],[1,0]]);
+      const _fiber =track(p, [[0,0],[.62,0],[.72,1],[.82,1],[.95,.25],[1,0]]);
+      const _d     =track(p, [[0,0],[.15,0],[.22,1],[.30,.25],[.40,0],[1,0]]);
+      const _e     =track(p, [[0,.8],[.15,.7],[.3,.5],[.5,.8],[.6,1.05],[.7,.65],[.85,.6],[1,.72]]);
+      const _n     =track(p, [[0,0],[.2,.04],[.4,-.03],[.6,.05],[.8,-.03],[1,0]]);
       const _b=window.__QANT_BEAM__;
-      if(_b){ _b.baseEnergy=_e; _b.baseNodeY=_n; _b.disruptTarget=_d; }
-      else { U.uEnergy.value=_e; U.uNodeY.value=_n; U.uDisrupt.value=_d; }
+      if(_b){ _b.baseEnergy=_e; _b.baseNodeY=_n; _b.disruptTarget=_d;
+              _b.spreadTarget=_spread; _b.splitTarget=_split; _b.fiberTarget=_fiber; }
+      else { U.uEnergy.value=_e; U.uNodeY.value=_n; U.uDisrupt.value=_d;
+             U.uBeamSpread.value=_spread; U.uSplit.value=_split; U.uFiber.value=_fiber; }
       prog.style.width=(p*100)+"%";
     },
   });
