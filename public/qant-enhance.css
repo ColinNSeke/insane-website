@@ -366,3 +366,35 @@ html.qant-static .beam-trail{ display:none; }     /* mobile = static fallback */
   .product-cap{ opacity:1 !important; transform:none !important; }
   .beam-trail{ display:none; }
 }
+
+/* ============================================================
+   DURCHGANG 5 — full scroll choreography mechanics
+   ============================================================ */
+/* A) headline split-text masks */
+.word-mask{ display:inline-block; overflow:hidden; vertical-align:top;
+  padding-bottom:.14em; margin-bottom:-.14em; }
+.word-in{ display:inline-block; will-change:transform; }
+
+/* B) images: inner layer is taller than the frame so the counter-parallax
+   never reveals an edge; gsap owns the transform (no CSS transition on it) */
+.stage{ position:relative; }
+.stage img{ position:absolute; top:-12%; left:0; width:100%; height:124%;
+  object-fit:cover; transform:none; transition:filter 1.1s ease; }
+.stage--reveal img{ clip-path:none; }   /* reveal now clips the container */
+
+/* E) problem cells: hairline that draws in left→right */
+.problem .plist .cell{ position:relative; }
+.problem .plist .cell::after{ content:""; position:absolute; top:0; left:0; right:0; height:1px;
+  background:var(--cyan); opacity:.55; transform:scaleX(var(--cd,0)); transform-origin:left; }
+
+/* D) bento 3D depth for the horizontal pin entrance */
+.applications.pinmode .bento{ perspective:1200px; }
+
+@media(prefers-reduced-motion:reduce){
+  .stage{ clip-path:none !important; }
+  .stage img{ transform:none !important; }
+  .word-mask{ overflow:visible; }
+  .word-in{ transform:none !important; }
+  .problem .plist .cell::after{ transform:scaleX(1); }
+  .beam-trail{ display:none; }
+}
