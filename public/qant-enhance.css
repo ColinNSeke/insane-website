@@ -422,3 +422,30 @@ html.qant-static .beam-trail{ display:none; }     /* mobile = static fallback */
   .stage img{ transform:none !important; }
   .proof .scrim{ opacity:1; }
 }
+
+/* ============================================================
+   DURCHGANG 7 — vertical side-beam + assembly pieces
+   ============================================================ */
+/* the side-beam: thin cyan thread down the LEFT edge, behind content
+   (z1, between canvas and <main>), so it never collides with text */
+.side-beam{ position:fixed; top:0; bottom:0; left:clamp(14px,4vw,64px); width:40px;
+  z-index:1; pointer-events:none; --p:0; }
+html.qant-static .side-beam{ display:none; }   /* mobile static fallback */
+.sb-trail{ position:absolute; top:0; left:50%; width:2px; height:100vh;
+  transform:translateX(-50%) scaleY(var(--p)); transform-origin:top center;
+  background:linear-gradient(to bottom, rgba(95,214,255,0), rgba(95,214,255,.05) 28%, rgba(110,212,250,.5));
+  filter:blur(.5px); }
+.sb-head{ position:absolute; top:0; left:50%; width:10px; height:10px; border-radius:50%;
+  transform:translate(-50%,-50%) translateY(calc(var(--p) * 100vh));
+  background:radial-gradient(circle, rgba(175,238,255,.95), rgba(95,214,255,.5) 42%, rgba(95,214,255,0) 72%);
+  box-shadow:0 0 22px 5px rgba(95,214,255,.45);
+  opacity:clamp(0, calc(var(--p) * 8), 1); }
+@media(max-width:860px){ .side-beam{ width:24px; } .sb-head{ width:7px; height:7px; box-shadow:0 0 14px 3px rgba(95,214,255,.4); } }
+
+/* assembly word fragments (transforms need inline-block) */
+.asm-word{ display:inline-block; vertical-align:top; will-change:transform,opacity; }
+
+@media(prefers-reduced-motion:reduce){
+  .side-beam{ display:none; }
+  .asm-word{ transform:none !important; opacity:1 !important; }
+}

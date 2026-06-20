@@ -2,10 +2,11 @@
    Q.ANT — enhancement runtime  (ADDITIVE / isolated)
    Feature-flagged: window.QANT_ENHANCE (default true).
 
-   THE BEAM IS THE STORY. The scroll-scrubbed beam journey lives in
-   the shader (driven by the page-progress keyframe map in the inline
-   module). This file only does SERVING content motion (simple,
-   reversible) + readability scrims. It must never out-shout the beam.
+   The HERO beam / shader is NOT touched. This file adds two things:
+   1) a vertical side-beam that flows down the left edge with scroll
+   2) section "assembly": scattered pieces fly into place as the beam
+      head reaches them (scrub-coupled, reversible).
+   Plus the readability scrims. reduced-motion → all off.
    ============================================================ */
 (function () {
   "use strict";
@@ -14,6 +15,8 @@
   const gsap = window.gsap;
   const ST = window.ScrollTrigger;
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const STATIC = document.documentElement.classList.contains("qant-static");
+  const small = matchMedia("(max-width: 860px)").matches;
   const EASE = "power3.out";
 
   document.documentElement.classList.add("qant-enh");
@@ -25,8 +28,7 @@
 
   if (!gsap || !ST) return;
 
-  /* ---- READABILITY: scrim + beam steps back behind active text ----
-     (the numbers section is handled separately so its flare can read) */
+  /* ---- READABILITY: scrim + beam steps back behind active text ---- */
   let activeText = 0;
   document.querySelectorAll("[data-readable]").forEach((block) => {
     const scrim = block.querySelector(".scrim");
@@ -41,111 +43,118 @@
     });
   });
 
-  /* NUMBERS section: a strong radial scrim behind the numbers, faded in
-     with the leap (peaks when the section is centred). Beam is free to
-     flare; the scrim keeps 1,000 / 30× / 50× readable through it. */
-  const proof = document.querySelector("#proof");
-  const proofScrim = proof && proof.querySelector(".scrim");
-  if (proof && proofScrim) {
-    ST.create({
-      trigger: proof, start: "top bottom", end: "bottom top", scrub: true,
-      onUpdate(self) {
-        const e = 1 - Math.abs(self.progress - 0.5) * 2; // triangular: 1 at centre
-        proofScrim.style.opacity = Math.max(0, e).toFixed(3);
-      },
-    });
-  }
-
   if (reduce) {
     document.querySelectorAll(".scrim").forEach((el) => el.classList.add("on"));
     const sl = document.querySelector("#sigLayer"); if (sl) sl.classList.add("show");
     document.querySelectorAll("#proof [data-count]").forEach((el) =>
       (el.textContent = (+el.dataset.count).toLocaleString("en-US") + (el.dataset.suffix || "")));
-    return;
+    return; // no side-beam, no assembly
   }
 
-  /* ---- HEADLINES: simple opacity + translateY, scrub, reversible ---- */
-  document.querySelectorAll("[data-wipe]").forEach((el) => {
-    gsap.fromTo(el, { autoAlpha: 0, y: 30 }, {
-      autoAlpha: 1, y: 0, ease: EASE,
-      scrollTrigger: { trigger: el, start: "top 85%", end: "top 55%", scrub: true },
+  /* ============================================================
+     THE VERTICAL SIDE-BEAM — drips from the hero beam, flows the
+     left edge with scroll. Pure DOM; CSS reads --p (smoothed by
+     the scrub). Not rendered on the mobile static fallback.
+     ============================================================ */
+  const sideBeam = document.querySelector("#sideBeam");
+  if (sideBeam && !STATIC) {
+    ST.create({
+      trigger: "#main", start: "top top", end: "bottom bottom", scrub: 0.8,
+      onUpdate: (self) => sideBeam.style.setProperty("--p", self.progress.toFixed(4)),
     });
-  });
-  /* body copy / eyebrows / small items keep a quiet reversible fade */
-  document.querySelectorAll("section:not(#hero) .reveal").forEach((el) => {
-    gsap.fromTo(el, { autoAlpha: 0, y: 24 }, {
-      autoAlpha: 1, y: 0, ease: EASE,
-      scrollTrigger: { trigger: el, start: "top 86%", end: "top 60%", scrub: true },
+  } else if (sideBeam) {
+    sideBeam.style.display = "none";
+  }
+
+  /* ============================================================
+     SECTION ASSEMBLY — pieces start scattered (seeded-random per
+     element) and fly to their layout spot as the section enters.
+     scrub-coupled, staggered top→down, reversible.
+     ============================================================ */
+  const rand = (s) => { const x = Math.sin(s * 99.137) * 43758.545; return x - Math.floor(x); };
+
+  // split each section headline into word spans (preserve <em>)
+  const splitHeadline = (el) => {
+    if (el.dataset.split === "done") return;
+    const frag = document.createDocumentFragment();
+    const add = (content, isEl) => {
+      const mask = document.createElement("span"); mask.className = "asm-word";
+      if (isEl) mask.appendChild(content); else mask.textContent = content;
+      frag.appendChild(mask);
+    };
+    el.childNodes.forEach((node) => {
+      if (node.nodeType === 3) {
+        node.textContent.split(/(\s+)/).forEach((tok) => {
+          if (tok === "") return;
+          if (!tok.trim()) frag.appendChild(document.createTextNode(tok));
+          else add(tok, false);
+        });
+      } else if (node.nodeType === 1) { add(node.cloneNode(true), true); }
+    });
+    el.innerHTML = ""; el.appendChild(frag); el.dataset.split = "done";
+  };
+  document.querySelectorAll("[data-wipe]").forEach(splitHeadline);
+
+  // amplitude — gentler on small screens
+  const AX = small ? 40 : 110, AY = small ? 50 : 130, AR = small ? 3 : 7;
+
+  let seedBase = 0;
+  document.querySelectorAll("main > section").forEach((sec) => {
+    if (sec.id === "hero" || sec.classList.contains("signature")) return;
+
+    // collect pieces, drop any nested inside another piece (e.g. bento .stage)
+    let pieces = [...sec.querySelectorAll(".asm-word, .reveal, .stat, .cell, .card, .stage")];
+    pieces = pieces.filter((el) => !pieces.some((o) => o !== el && o.contains(el)));
+    if (!pieces.length) return;
+
+    pieces.forEach((el, i) => {
+      const s = seedBase + i;
+      gsap.set(el, {
+        xPercent: 0, x: (rand(s) * 2 - 1) * AX,
+        y: AY * (0.4 + rand(s + 1) * 0.7),
+        rotation: (rand(s + 2) * 2 - 1) * AR,
+        scale: 0.88 + rand(s + 3) * 0.07,
+        autoAlpha: 0, transformOrigin: "50% 50%",
+      });
+    });
+    seedBase += pieces.length + 7;
+
+    gsap.to(pieces, {
+      x: 0, y: 0, rotation: 0, scale: 1, autoAlpha: 1, ease: EASE, stagger: 0.05,
+      scrollTrigger: { trigger: sec, start: "top 80%", end: "top 32%", scrub: true },
     });
   });
 
-  /* ---- IMAGES: gentle zoom-settle only (no fancy clip/parallax) ---- */
-  document.querySelectorAll(".stage").forEach((stage) => {
-    const img = stage.querySelector("img");
-    if (!img) return;
-    gsap.fromTo(img, { scale: 1.08 }, {
-      scale: 1.0, ease: EASE,
-      scrollTrigger: { trigger: stage, start: "top 90%", end: "top 45%", scrub: true },
+  /* numbers count up WHILE flying in (and back down on reverse) */
+  document.querySelectorAll("#proof .stat").forEach((stat) => {
+    const v = stat.querySelector(".v");
+    const end = +v.dataset.count, suf = v.dataset.suffix || "", o = { v: 0 };
+    gsap.to(o, {
+      v: end, ease: "none",
+      onUpdate: () => (v.textContent = Math.round(o.v).toLocaleString("en-US") + suf),
+      scrollTrigger: { trigger: stat, start: "top 80%", end: "top 38%", scrub: true },
     });
-    if (stage.hasAttribute("data-lit"))
-      ST.create({ trigger: stage, start: "top 70%", end: "bottom 30%",
-        onToggle: (self) => stage.classList.toggle("lit", self.isActive) });
   });
 
-  /* ---- background depth parallax stays (subtle) ---- */
+  /* image grade lift + signature composite (kept, subtle, reversible) */
+  document.querySelectorAll(".stage[data-lit]").forEach((stage) =>
+    ST.create({ trigger: stage, start: "top 70%", end: "bottom 30%",
+      onToggle: (self) => stage.classList.toggle("lit", self.isActive) }));
+
   document.querySelectorAll("[data-parallax]").forEach((el) => {
     const isBg = el.classList.contains("bg-layer");
     const node = isBg ? el.querySelector("img") : el;
     if (!node) return;
     const amt = parseFloat(el.dataset.parallax) || 10;
-    gsap.fromTo(node, { yPercent: -amt }, {
-      yPercent: amt, ease: "none",
-      scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: true },
-    });
+    gsap.fromTo(node, { yPercent: -amt }, { yPercent: amt, ease: "none",
+      scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: true } });
   });
 
-  /* ---- NUMBERS: scroll-coupled countup + scale/y; labels stagger ---- */
-  if (proof) {
-    proof.querySelectorAll(".stat").forEach((stat) => {
-      const v = stat.querySelector(".v");
-      const end = +v.dataset.count, suf = v.dataset.suffix || "", o = { v: 0 };
-      const tl = gsap.timeline({
-        scrollTrigger: { trigger: stat, start: "top 82%", end: "top 42%", scrub: true },
-      });
-      tl.fromTo(v, { scale: 0.85, y: 30, autoAlpha: 0.3 },
-        { scale: 1, y: 0, autoAlpha: 1, ease: EASE }, 0);
-      tl.to(o, { v: end, ease: "none",
-        onUpdate: () => (v.textContent = Math.round(o.v).toLocaleString("en-US") + suf) }, 0);
-      const label = stat.querySelector(".l");
-      if (label) tl.fromTo(label, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, ease: EASE }, 0.12);
-    });
-  }
-
-  /* ---- CARDS: staggered opacity + translateY, scrub ---- */
-  const cards = document.querySelectorAll("#applications .card");
-  if (cards.length) {
-    gsap.fromTo(cards, { autoAlpha: 0, y: 60 }, {
-      autoAlpha: 1, y: 0, ease: EASE, stagger: 0.06,
-      scrollTrigger: { trigger: "#applications", start: "top 78%", end: "top 38%", scrub: true },
-    });
-  }
-  /* problem cells: same simple staggered rise */
-  const cells = document.querySelectorAll("#problem .plist .cell");
-  if (cells.length) {
-    gsap.fromTo(cells, { autoAlpha: 0, y: 40 }, {
-      autoAlpha: 1, y: 0, ease: EASE, stagger: 0.08,
-      scrollTrigger: { trigger: "#problem .plist", start: "top 84%", end: "top 50%", scrub: true },
-    });
-  }
-
-  /* ---- SIGNATURE composite: just reveal the product render in view ---- */
   const sig = document.querySelector("#signature");
   const sigLayer = document.querySelector("#sigLayer");
   if (sig && sigLayer) {
-    ST.create({
-      trigger: sig, start: "top 65%", end: "bottom 35%",
-      onToggle: (self) => sigLayer.classList.toggle("show", self.isActive),
-    });
+    ST.create({ trigger: sig, start: "top 65%", end: "bottom 35%",
+      onToggle: (self) => sigLayer.classList.toggle("show", self.isActive) });
   }
 
   ST.refresh();
