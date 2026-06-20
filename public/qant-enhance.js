@@ -23,6 +23,10 @@
   const STATIC = document.documentElement.classList.contains("qant-static");
   const wide = matchMedia("(min-width: 1024px)").matches && !STATIC;
 
+  // ---- ONE motion vocabulary: heavy ease, long tail, longer durations ----
+  const EASE = "power4.out";
+  const DUR = 1.5;
+
   document.documentElement.classList.add("qant-enh");
 
   // Beam handle — set modulation *targets*; the page's render loop damps to them.
@@ -133,7 +137,7 @@
       spans.push(inner);
     });
     gsap.fromTo(spans, { yPercent: 118, opacity: 0 }, {
-      yPercent: 0, opacity: 1, duration: 1.0, ease: "expo.out", stagger: 0.08,
+      yPercent: 0, opacity: 1, duration: DUR, ease: EASE, stagger: 0.1,
       scrollTrigger: { trigger: h, start: "top 80%", toggleActions: "play none none reverse" },
     });
   });
@@ -177,6 +181,24 @@
       scrollTrigger: { trigger: sig, start: "top bottom", end: "bottom top", scrub: 0.6 },
     });
   }
+
+  /* ---- product callouts: spec labels enter with offset to the image ---- */
+  document.querySelectorAll("#product .stage--reveal").forEach((fig) => {
+    const cap = fig.querySelector(".product-cap");
+    if (!cap) return;
+    gsap.fromTo(cap.children, { yPercent: 70, opacity: 0 }, {
+      yPercent: 0, opacity: 1, ease: EASE, duration: DUR, stagger: 0.12,
+      scrollTrigger: { trigger: fig, start: "top 78%", toggleActions: "play none none reverse" },
+    });
+  });
+
+  /* ---- line-draw accent: the principle step dividers draw in ---- */
+  gsap.utils.toArray(".principle .pstep").forEach((el) => {
+    gsap.fromTo(el, { "--d": 0 }, {
+      "--d": 1, ease: EASE, duration: DUR,
+      scrollTrigger: { trigger: el, start: "top 88%", toggleActions: "play none none reverse" },
+    });
+  });
 
   /* ============================================================
      PIN SEQUENCE — Applications scrolls horizontally (rhythm change)
