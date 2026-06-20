@@ -309,6 +309,46 @@ main h2:not(:last-child){ margin-bottom:clamp(20px,2vw,34px); }
 /* product callouts enter with offset to the product image (JS-driven) */
 .product-cap{ will-change:transform,opacity; }
 
+/* ============================================================
+   DURCHGANG 4 — THE BEAM IS THE SCROLL
+   A persistent vertical light-trail (one elegant line, no particles)
+   travels the page with scroll; its head is the playhead. Composited
+   with screen blend so it only ever ADDS light — never darkens text.
+   ============================================================ */
+.beam-trail{ position:fixed; inset:0; z-index:4; pointer-events:none;
+  mix-blend-mode:screen; --bx:0vw; --bv:.32; }
+html.qant-static .beam-trail{ display:none; }     /* mobile = static fallback */
+
+/* the trail: faint full-height thread, brightest at the head line (~52vh) */
+.bt-line{ position:absolute; top:0; bottom:0; left:50%; width:2px;
+  transform:translateX(calc(-50% + var(--bx)));
+  background:linear-gradient(to bottom,
+    rgba(95,214,255,0) 6%, rgba(95,214,255,.10) 30%, rgba(95,214,255,.5) 47%,
+    rgba(140,228,255,.95) 52%, rgba(95,214,255,.16) 58%, rgba(95,214,255,0) 76%);
+  filter:blur(.6px); opacity:var(--bv); }
+
+/* the bright head — small/dim at rest, larger/brighter with scroll speed */
+.bt-head{ position:absolute; top:52%; left:50%; width:170px; height:170px;
+  transform:translate(calc(-50% + var(--bx)), -50%) scale(calc(.5 + var(--bv)*.8));
+  background:radial-gradient(circle, rgba(160,235,255,.8) 0%, rgba(95,214,255,.32) 32%, rgba(95,214,255,0) 68%);
+  filter:blur(2px); opacity:var(--bv); }
+
+/* Mach-Zehnder split — two paths diverge from the head, then recombine */
+.bt-branch{ position:absolute; top:52%; left:50%; width:2px;
+  transform:translate(calc(-50% + var(--bx)), -50%); opacity:0; transition:opacity .6s ease; --split:0; }
+.bt-branch.on{ opacity:var(--bv); }
+.bt-branch i{ position:absolute; top:0; left:0; width:2px; height:32vh; transform-origin:top center;
+  background:linear-gradient(to bottom, rgba(95,214,255,.7), rgba(95,214,255,0)); filter:blur(.6px); }
+.bt-branch i:first-child{ transform:rotate(calc(var(--split) * -15deg)); }
+.bt-branch i:last-child{ transform:rotate(calc(var(--split) * 15deg)); }
+
+/* BENTO — the beam forks in; cards light up sequentially (JS sets --glow) */
+#applications .card{ --glow:0; }
+#applications .card::after{ content:""; position:absolute; inset:0; z-index:3; pointer-events:none;
+  border:1px solid rgba(95,214,255,.55);
+  box-shadow:inset 0 0 34px rgba(95,214,255,.18);
+  opacity:var(--glow); }
+
 /* reduced-motion: freeze every drift / reveal in the open state */
 @media(prefers-reduced-motion:reduce){
   .stage img{ transform:none; transition:none; }
@@ -317,7 +357,8 @@ main h2:not(:last-child){ margin-bottom:clamp(20px,2vw,34px); }
   .scrim{ transition:none; }
   .q-eyebrow .dot{ animation:none; }
   .sig-layer{ transition:none; }
-  [data-wipe]{ clip-path:none !important; }
+  [data-wipe]{ clip-path:none !important; filter:none !important; }
   .principle .pstep::before{ transform:scaleX(1); }
   .product-cap{ opacity:1 !important; transform:none !important; }
+  .beam-trail{ display:none; }
 }

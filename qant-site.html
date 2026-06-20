@@ -260,7 +260,9 @@
 
   <!-- 4 · PROOF (kinetic numbers) -->
   <section class="proof" id="proof">
-    <div class="wrap" data-readable>
+    <!-- no data-readable here: this is the cinematic takeover; the beam
+         must be free to explode (huge white numerals carry their own AA) -->
+    <div class="wrap">
       <div class="scrim"></div>
       <div class="eyebrow reveal"><span class="dot"></span>The leap</div>
       <h2 data-wipe>One optical element does the work of <em>thousands.</em></h2>
@@ -567,14 +569,15 @@ function loop(){
   const dT=(B&&B.dampTarget!=null)?B.dampTarget:1;
   const bT=(B&&B.boostTarget!=null)?B.boostTarget:1;
   const nT=(B&&B.nodeAddTarget!=null)?B.nodeAddTarget:0;
-  dampNow+=(dT-dampNow)*0.06; boostNow+=(bT-boostNow)*0.05; nodeAddNow+=(nT-nodeAddNow)*0.05;
+  dampNow+=(dT-dampNow)*0.06; boostNow+=(bT-boostNow)*0.08; nodeAddNow+=(nT-nodeAddNow)*0.05;
   const baseE=(B&&B.baseEnergy!=null)?B.baseEnergy:0.95;
   const baseN=(B&&B.baseNodeY!=null)?B.baseNodeY:0;
   const dis  =(B&&B.disruptTarget!=null)?B.disruptTarget:0;
+  const db   =(B&&B.disruptBoost!=null)?B.disruptBoost:0;
   const eTarget=baseE*dampNow*boostNow*(1+velSmooth*0.18);
   U.uEnergy.value += (eTarget-U.uEnergy.value)*0.10;
   U.uNodeY.value  += ((baseN+nodeAddNow+velSmooth*0.02)-U.uNodeY.value)*0.08;
-  U.uDisrupt.value+= ((dis+velSmooth*0.25)-U.uDisrupt.value)*0.08;
+  U.uDisrupt.value+= ((dis+db+velSmooth*0.25)-U.uDisrupt.value)*0.08;
   if(U.uIntro.value>0.99) bloom.strength = 0.85 + (boostNow-1)*0.9 + velSmooth*0.15;
 
   beamAnno.style.transform=`translate(${mouse.x*22}px,${mouse.y*-16}px)`;
@@ -626,14 +629,18 @@ if(reduce){
         scrollTrigger:{ trigger:el, start:"top 86%", toggleActions:"play none none reverse" } });
   });
 
-  /* ---------- kinetic numbers ---------- */
-  document.querySelectorAll("[data-count]").forEach(el=>{
-    const end=+el.dataset.count, suf=el.dataset.suffix||"", o={v:0};
-    ScrollTrigger.create({ trigger:el, start:"top 80%", once:true, onEnter(){
-      gsap.to(o,{ v:end, duration:1.7, ease:"power2.out",
-        onUpdate(){ el.textContent=Math.round(o.v).toLocaleString("en-US")+suf; } });
-    }});
-  });
+  /* ---------- kinetic numbers ----------
+     When the enhancement layer is ON it owns the count (beam-coupled,
+     reversible). Keep this simple once-count only as the flag-off path. */
+  if(window.QANT_ENHANCE===false){
+    document.querySelectorAll("[data-count]").forEach(el=>{
+      const end=+el.dataset.count, suf=el.dataset.suffix||"", o={v:0};
+      ScrollTrigger.create({ trigger:el, start:"top 80%", once:true, onEnter(){
+        gsap.to(o,{ v:end, duration:1.7, ease:"power2.out",
+          onUpdate(){ el.textContent=Math.round(o.v).toLocaleString("en-US")+suf; } });
+      }});
+    });
+  }
 
   /* ---------- THE SPINE: scroll-modulated beam ---------- */
   const track=(p,stops)=>{
