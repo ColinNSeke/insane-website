@@ -315,38 +315,42 @@ main h2:not(:last-child){ margin-bottom:clamp(20px,2vw,34px); }
    travels the page with scroll; its head is the playhead. Composited
    with screen blend so it only ever ADDS light — never darkens text.
    ============================================================ */
-.beam-trail{ position:fixed; inset:0; z-index:4; pointer-events:none;
-  mix-blend-mode:screen; --bx:0vw; --bv:.32; }
+/* z-index:1 → BEHIND the content (between the canvas and <main>), so the
+   trail is light the eye catches at the edge, never over the text. Thin,
+   dim, muted cyan. The Apple rule: the glow serves the content. */
+.beam-trail{ position:fixed; inset:0; z-index:1; pointer-events:none;
+  mix-blend-mode:screen; --bx:0vw; --bv:.18; }
 html.qant-static .beam-trail{ display:none; }     /* mobile = static fallback */
 
-/* the trail: faint full-height thread, brightest at the head line (~52vh) */
+/* the trail: a thin (2px) muted thread, only gently brightest at the head */
 .bt-line{ position:absolute; top:0; bottom:0; left:50%; width:2px;
   transform:translateX(calc(-50% + var(--bx)));
   background:linear-gradient(to bottom,
-    rgba(95,214,255,0) 6%, rgba(95,214,255,.10) 30%, rgba(95,214,255,.5) 47%,
-    rgba(140,228,255,.95) 52%, rgba(95,214,255,.16) 58%, rgba(95,214,255,0) 76%);
-  filter:blur(.6px); opacity:var(--bv); }
+    rgba(95,214,255,0) 8%, rgba(95,214,255,.06) 32%, rgba(95,214,255,.30) 48%,
+    rgba(110,210,250,.5) 52%, rgba(95,214,255,.10) 58%, rgba(95,214,255,0) 74%);
+  filter:blur(.5px); opacity:var(--bv); }
 
-/* the bright head — small/dim at rest, larger/brighter with scroll speed */
-.bt-head{ position:absolute; top:52%; left:50%; width:170px; height:170px;
-  transform:translate(calc(-50% + var(--bx)), -50%) scale(calc(.5 + var(--bv)*.8));
-  background:radial-gradient(circle, rgba(160,235,255,.8) 0%, rgba(95,214,255,.32) 32%, rgba(95,214,255,0) 68%);
+/* the head — a small, soft glow (~max 28px reach), muted cyan, low opacity */
+.bt-head{ position:absolute; top:52%; left:50%; width:90px; height:90px;
+  transform:translate(calc(-50% + var(--bx)), -50%) scale(calc(.6 + var(--bv)*.6));
+  background:radial-gradient(circle, rgba(120,215,250,.45) 0%, rgba(95,214,255,.16) 34%, rgba(95,214,255,0) 70%);
   filter:blur(2px); opacity:var(--bv); }
 
-/* Mach-Zehnder split — two paths diverge from the head, then recombine */
+/* Mach-Zehnder split — two faint paths diverge from the head, then recombine */
 .bt-branch{ position:absolute; top:52%; left:50%; width:2px;
   transform:translate(calc(-50% + var(--bx)), -50%); opacity:0; transition:opacity .6s ease; --split:0; }
 .bt-branch.on{ opacity:var(--bv); }
-.bt-branch i{ position:absolute; top:0; left:0; width:2px; height:32vh; transform-origin:top center;
-  background:linear-gradient(to bottom, rgba(95,214,255,.7), rgba(95,214,255,0)); filter:blur(.6px); }
-.bt-branch i:first-child{ transform:rotate(calc(var(--split) * -15deg)); }
-.bt-branch i:last-child{ transform:rotate(calc(var(--split) * 15deg)); }
+.bt-branch i{ position:absolute; top:0; left:0; width:2px; height:30vh; transform-origin:top center;
+  background:linear-gradient(to bottom, rgba(95,214,255,.4), rgba(95,214,255,0)); filter:blur(.5px); }
+.bt-branch i:first-child{ transform:rotate(calc(var(--split) * -14deg)); }
+.bt-branch i:last-child{ transform:rotate(calc(var(--split) * 14deg)); }
 
-/* BENTO — the beam forks in; cards light up sequentially (JS sets --glow) */
+/* BENTO — cards light up sequentially (JS sets --glow). A quiet hairline,
+   not a flare. */
 #applications .card{ --glow:0; }
 #applications .card::after{ content:""; position:absolute; inset:0; z-index:3; pointer-events:none;
-  border:1px solid rgba(95,214,255,.55);
-  box-shadow:inset 0 0 34px rgba(95,214,255,.18);
+  border:1px solid rgba(95,214,255,.34);
+  box-shadow:inset 0 0 22px rgba(95,214,255,.08);
   opacity:var(--glow); }
 
 /* reduced-motion: freeze every drift / reveal in the open state */

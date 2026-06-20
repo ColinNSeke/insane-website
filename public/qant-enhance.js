@@ -96,16 +96,16 @@
   });
 
   // SIGNATURE MOVE — the beam head scans each headline left→right: a clip
-  // wipe paired with a dark-grey→white brightening, so the text reads as
-  // being *lit by the light reaching it*. Scrub-coupled = reversible.
+  // wipe with a gentle 0.35→1 opacity lift (NO glow, NO brightening past
+  // normal). The text reads as quietly lit, never gleaming. Reversible.
   document.querySelectorAll("[data-wipe]").forEach((el) => {
-    el.style.willChange = "clip-path, filter";
+    el.style.willChange = "clip-path, opacity";
     gsap.fromTo(
       el,
-      { clipPath: "inset(0 100% 0 0)", filter: "brightness(.45)" },
+      { clipPath: "inset(0 100% 0 0)", opacity: 0.35 },
       {
-        clipPath: "inset(0 0 0 0)", filter: "brightness(1)", ease: "none",
-        scrollTrigger: { trigger: el, start: "top 70%", end: "top 42%", scrub: true },
+        clipPath: "inset(0 0 0 0)", opacity: 1, ease: "none",
+        scrollTrigger: { trigger: el, start: "top 72%", end: "top 46%", scrub: true },
       }
     );
   });
@@ -168,7 +168,8 @@
         trail.style.setProperty("--bx", x.toFixed(2) + "vw");
         const v = Math.min(Math.abs(self.getVelocity()) / 2600, 1);
         const fadeIn = Math.min(p / 0.06, 1);                          // stay clear of the hero wave
-        trail.style.setProperty("--bv", ((0.30 + v * 0.7) * fadeIn).toFixed(3));
+        // dim + atmospheric: ~0.15 at rest, ~0.45 ceiling even at speed
+        trail.style.setProperty("--bv", ((0.15 + v * 0.3) * fadeIn).toFixed(3));
       },
     });
   }
@@ -211,16 +212,18 @@
     const stats = proof.querySelectorAll(".stat .v");
     const tl = gsap.timeline({
       scrollTrigger: {
-        trigger: proof, start: "top top", end: "+=150%",
+        trigger: proof, start: "top top", end: "+=130%",
         scrub: 0.7, pin: true, anticipatePin: 1, invalidateOnRefresh: true,
       },
     });
-    tl.fromTo(B, { boostTarget: 1 }, { boostTarget: 2.6, ease: "power2.in", duration: 0.5 }, 0)
-      .to(B, { boostTarget: 1.05, ease: "power2.out", duration: 0.5 }, 0.5);
-    tl.fromTo(B, { disruptBoost: 0 }, { disruptBoost: 0.9, ease: "power1.inOut", duration: 0.5 }, 0)
+    // the COUNT is the moment — only the faintest lift on the background glow,
+    // a barely-there interference; numbers rise quietly (opacity + small scale).
+    tl.fromTo(B, { boostTarget: 1 }, { boostTarget: 1.22, ease: "power2.inOut", duration: 0.5 }, 0)
+      .to(B, { boostTarget: 1, ease: "power2.inOut", duration: 0.5 }, 0.5);
+    tl.fromTo(B, { disruptBoost: 0 }, { disruptBoost: 0.18, ease: "power1.inOut", duration: 0.5 }, 0)
       .to(B, { disruptBoost: 0, ease: "power1.inOut", duration: 0.5 }, 0.5);
-    tl.fromTo(stats, { scale: 0.5, opacity: 0.15, filter: "blur(8px)" },
-      { scale: 1, opacity: 1, filter: "blur(0px)", ease: "power3.out", duration: 0.55, stagger: 0.06 }, 0.05);
+    tl.fromTo(stats, { scale: 0.86, opacity: 0.35 },
+      { scale: 1, opacity: 1, ease: "power3.out", duration: 0.55, stagger: 0.06 }, 0.05);
     counters(proof).forEach((c) => {
       const o = { v: 0 };
       tl.to(o, { v: c.end, ease: "none", duration: 0.6,
@@ -242,11 +245,11 @@
     const flash = sigLayer.querySelector(".sig-flash");
     const fire = () => {
       sigLayer.classList.add("show");
-      gsap.to(B, { boostTarget: 1.7, duration: 0.9, ease: "power2.out", overwrite: true });
+      gsap.to(B, { boostTarget: 1.32, duration: 0.9, ease: "power2.out", overwrite: true });
       if (flash)
         gsap.fromTo(flash, { opacity: 0 }, {
-          opacity: 1, duration: 0.55, ease: "power2.out",
-          onComplete: () => gsap.to(flash, { opacity: 0.4, duration: 1.4, ease: "power2.inOut" }),
+          opacity: 0.45, duration: 0.6, ease: "power2.out",
+          onComplete: () => gsap.to(flash, { opacity: 0.2, duration: 1.4, ease: "power2.inOut" }),
         });
     };
     const settle = () => {

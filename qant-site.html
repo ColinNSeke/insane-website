@@ -260,9 +260,7 @@
 
   <!-- 4 · PROOF (kinetic numbers) -->
   <section class="proof" id="proof">
-    <!-- no data-readable here: this is the cinematic takeover; the beam
-         must be free to explode (huge white numerals carry their own AA) -->
-    <div class="wrap">
+    <div class="wrap" data-readable>
       <div class="scrim"></div>
       <div class="eyebrow reveal"><span class="dot"></span>The leap</div>
       <h2 data-wipe>One optical element does the work of <em>thousands.</em></h2>
@@ -506,7 +504,7 @@ const composer = new EffectComposer(renderer);
 composer.setPixelRatio(Math.min(devicePixelRatio,2));
 composer.setSize(innerWidth, innerHeight);
 composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight), .85, .55, 0);
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight), .32, .55, 0);
 composer.addPass(bloom);
 const finalPass = new ShaderPass({
   uniforms:{ tDiffuse:{value:null}, uTime:{value:0}, uRes:{value:new THREE.Vector2()} },
@@ -578,7 +576,8 @@ function loop(){
   U.uEnergy.value += (eTarget-U.uEnergy.value)*0.10;
   U.uNodeY.value  += ((baseN+nodeAddNow+velSmooth*0.02)-U.uNodeY.value)*0.08;
   U.uDisrupt.value+= ((dis+db+velSmooth*0.25)-U.uDisrupt.value)*0.08;
-  if(U.uIntro.value>0.99) bloom.strength = 0.85 + (boostNow-1)*0.9 + velSmooth*0.15;
+  /* bloom stays a whisper — capped at 0.5, never a flood */
+  if(U.uIntro.value>0.99) bloom.strength = Math.min(0.5, 0.30 + (boostNow-1)*0.18 + velSmooth*0.05);
 
   beamAnno.style.transform=`translate(${mouse.x*22}px,${mouse.y*-16}px)`;
   composer.render();
@@ -613,8 +612,8 @@ if(reduce){
   /* ---------- hero intro ---------- */
   gsap.set(innerSpans,{ yPercent:115, filter:"blur(14px)", opacity:0 });
   gsap.to(U.uIntro,{ value:1, duration:2.0, ease:"power2.inOut" });
-  gsap.to(bloom,{ strength:1.4, duration:.4, ease:"power2.out", delay:1.55,
-    onComplete(){ gsap.to(bloom,{ strength:.85, duration:1.3, ease:"power2.inOut" }); } });
+  gsap.to(bloom,{ strength:.5, duration:.4, ease:"power2.out", delay:1.55,
+    onComplete(){ gsap.to(bloom,{ strength:.32, duration:1.3, ease:"power2.inOut" }); } });
   gsap.timeline({ delay:.55 })
     .to('[data-hero].eyebrow',{ opacity:1, duration:.8, ease:"power2.out" })
     .to(innerSpans,{ yPercent:0, filter:"blur(0px)", opacity:1, duration:1.15, ease:"expo.out", stagger:.12 },"-=.3")
@@ -656,7 +655,8 @@ if(reduce){
     onUpdate(self){
       const p=self.progress;
       /* set TARGETS only — the render loop damps toward them (no hard jumps) */
-      const _e=track(p, [[0,.95],[.22,.6],[.5,1.0],[.72,1.2],[.9,1.05],[1,1.0]]);
+      /* atmospheric: a low, quiet background glow — content always dominates */
+      const _e=track(p, [[0,.6],[.18,.4],[.5,.42],[.72,.46],[.9,.4],[1,.4]]);
       const _n=track(p, [[0,0],[.2,.05],[.4,-.045],[.6,.06],[.8,-.05],[1,0]]); // travel down the spine
       const _d=track(p, [[.12,0],[.28,1],[.42,0]]);
       const _b=window.__QANT_BEAM__;
