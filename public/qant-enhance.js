@@ -100,6 +100,29 @@
     ST.create({ trigger: stage, start: "top 70%", end: "bottom 30%",
       onToggle: (self) => stage.classList.toggle("lit", self.isActive) }));
 
+  /* ============================================================
+     PINNED 3D CARD — drive assembly.html's internal scroll from the
+     parent. Pin ~2.6 viewport; parent progress → iframe scrollTop, so
+     the real photonic card assembles in slow motion (reversible).
+     ============================================================ */
+  const card3d = document.querySelector("#card3d");
+  const frame = document.getElementById("card3dFrame");
+  if (card3d && frame && !STATIC) {
+    ST.create({
+      trigger: card3d, start: "top top", end: "+=260%",
+      pin: true, scrub: 1, anticipatePin: 1, invalidateOnRefresh: true,
+      onUpdate(self) {
+        try {
+          const w = frame.contentWindow, d = w && w.document;
+          if (d && d.body) {
+            const max = d.body.scrollHeight - w.innerHeight;
+            if (max > 0) w.scrollTo(0, self.progress * max);
+          }
+        } catch (e) { /* iframe not ready yet */ }
+      },
+    });
+  }
+
   ST.refresh();
   addEventListener("load", () => ST.refresh());
 })();
