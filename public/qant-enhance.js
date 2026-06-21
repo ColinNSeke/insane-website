@@ -18,10 +18,16 @@
 
   document.documentElement.classList.add("qant-enh");
 
+  // TEMP diagnostic — report status on-page
+  const dbg = document.getElementById("qant-debug");
+  const setDbg = (m) => { if (dbg) dbg.textContent = m; };
+  setDbg("enhance: RUNNING\ngsap=" + !!gsap + "  ScrollTrigger=" + !!ST +
+         "\nLenis=" + !!window.Lenis + "\nreduce=" + reduce + "  static=" + STATIC);
+
   const B = window.__QANT_BEAM__ || (window.__QANT_BEAM__ = {});
   if (B.dampTarget == null) B.dampTarget = 1;
 
-  if (!gsap || !ST) return;
+  if (!gsap || !ST) { setDbg("enhance STOPPED:\ngsap=" + !!gsap + " ScrollTrigger=" + !!ST + "\n(GSAP/ScrollTrigger did NOT load)"); return; }
 
   /* ---- readability: scrim + beam steps back behind active text ---- */
   let activeText = 0;
@@ -63,6 +69,7 @@
     let pieces = [...section.querySelectorAll(PIECE_SEL)];
     pieces = pieces.filter((el) => !pieces.some((o) => o !== el && o.contains(el)));
 
+    window.__QPIECES__ = (window.__QPIECES__ || 0) + pieces.length;
     pieces.forEach((piece, i) => {
       piece.classList.add("assemble-piece");
       gsap.fromTo(piece,
@@ -125,4 +132,8 @@
 
   ST.refresh();
   addEventListener("load", () => ST.refresh());
+
+  setDbg("enhance: DONE ✓\ngsap=" + !!gsap + " ST=" + !!ST + " Lenis=" + !!window.Lenis +
+         "\npieces animated=" + (window.__QPIECES__ || 0) +
+         "\ntriggers=" + ST.getAll().length);
 })();

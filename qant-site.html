@@ -7,6 +7,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script>
+  /* TEMP diagnostic — catches any JS error and shows it on-page (no DevTools needed) */
+  window.__QERR__ = [];
+  addEventListener("error", function (e) {
+    window.__QERR__.push(e.message);
+    var d = document.getElementById("qant-debug");
+    if (d) d.textContent = "JS ERROR: " + e.message;
+  });
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
@@ -156,7 +165,7 @@
   @media(prefers-reduced-motion:reduce){.eyebrow .dot,.rail::after{animation:none}}
 </style>
 <!-- enhancement layer loads AFTER the base style so it can override layout -->
-<link rel="stylesheet" href="public/qant-enhance.css?v=10" />
+<link rel="stylesheet" href="public/qant-enhance.css?v=11" />
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -166,6 +175,7 @@
   <div class="sig-flash"></div>
 </div>
 <div class="grain" aria-hidden="true"></div>
+<div id="qant-debug" style="position:fixed;top:8px;right:8px;z-index:99999;font:11px/1.4 monospace;color:#5fd6ff;background:rgba(0,0,0,.78);padding:6px 9px;border:1px solid #5fd6ff;border-radius:3px;pointer-events:none;white-space:pre">enhance: NOT loaded</div>
 <div class="prog" id="prog"></div>
 
 <nav id="nav">
@@ -694,6 +704,6 @@ if(reduce){
   });
 }
 </script>
-<script type="module" src="public/qant-enhance.js?v=10"></script>
+<script type="module" src="public/qant-enhance.js?v=11"></script>
 </body>
 </html>
