@@ -13,7 +13,7 @@
   addEventListener("error", function (e) {
     window.__QERR__.push(e.message);
     var d = document.getElementById("qant-debug");
-    if (d) d.textContent = "JS ERROR: " + e.message;
+    if (d){ d.style.display="block"; d.textContent = "JS ERROR: " + e.message; }
   });
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -165,7 +165,7 @@
   @media(prefers-reduced-motion:reduce){.eyebrow .dot,.rail::after{animation:none}}
 </style>
 <!-- enhancement layer loads AFTER the base style so it can override layout -->
-<link rel="stylesheet" href="public/qant-enhance.css?v=12" />
+<link rel="stylesheet" href="public/qant-enhance.css?v=13" />
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -175,7 +175,7 @@
   <div class="sig-flash"></div>
 </div>
 <div class="grain" aria-hidden="true"></div>
-<div id="qant-debug" style="position:fixed;top:8px;right:8px;z-index:99999;font:11px/1.4 monospace;color:#5fd6ff;background:rgba(0,0,0,.78);padding:6px 9px;border:1px solid #5fd6ff;border-radius:3px;pointer-events:none;white-space:pre">enhance: NOT loaded</div>
+<div id="qant-debug" style="position:fixed;top:8px;right:8px;z-index:99999;font:11px/1.4 monospace;color:#5fd6ff;background:rgba(0,0,0,.78);padding:6px 9px;border:1px solid #5fd6ff;border-radius:3px;pointer-events:none;white-space:pre;display:none">enhance: NOT loaded</div>
 <div class="prog" id="prog"></div>
 
 <nav id="nav">
@@ -704,6 +704,6 @@ if(reduce){
   });
 }
 </script>
-<script type="module" src="public/qant-enhance.js?v=12"></script>
+<script type="module" src="public/qant-enhance.js?v=13"></script>
 </body>
 </html>

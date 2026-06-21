@@ -40,7 +40,7 @@
         if (scrim) scrim.classList.toggle("on", self.isActive);
         activeText += self.isActive ? 1 : -1;
         if (activeText < 0) activeText = 0;
-        B.dampTarget = activeText > 0 ? 0.5 : 1;
+        B.dampTarget = activeText > 0 ? 0.7 : 1;
       },
     });
   });
@@ -75,14 +75,18 @@
       piece.classList.add("assemble-piece");
       gsap.fromTo(piece,
         {
-          y: 120 + (i % 5) * 30,        // 120–240px down
-          x: ((i % 3) - 1) * 80,        // -80, 0, +80
-          rotation: ((i % 7) - 3) * 3,  // -9°..+9°
-          scale: 0.8, opacity: 0,
+          y: 150 + (i % 5) * 40,         // 150–310px down
+          x: ((i % 3) - 1) * 120,        // -120, 0, +120
+          z: -400,                       // comes forward from depth
+          rotationX: 22,                 // 3D flip-in (flying)
+          rotation: ((i % 7) - 3) * 4,   // -12°..+12°
+          scale: 0.82, opacity: 0,
+          transformPerspective: 900, transformOrigin: "50% 100%",
         },
         {
-          y: 0, x: 0, rotation: 0, scale: 1, opacity: 1, ease: "power3.out",
-          scrollTrigger: { trigger: piece, start: "top 95%", end: "top 45%", scrub: 1 },
+          y: 0, x: 0, z: 0, rotationX: 0, rotation: 0, scale: 1, opacity: 1,
+          ease: "power3.out",
+          scrollTrigger: { trigger: piece, start: "top 96%", end: "top 42%", scrub: 1 },
         });
     });
   });
@@ -128,6 +132,33 @@
           }
         } catch (e) { /* iframe not ready yet */ }
       },
+    });
+  }
+
+  /* ============================================================
+     CUSTOM LIGHT CURSOR — a bright dot + a lagging ring that grows
+     over interactive elements. Desktop fine-pointer only.
+     ============================================================ */
+  if (!STATIC && matchMedia("(pointer:fine)").matches) {
+    const dot = document.createElement("div"); dot.id = "qant-cursor";
+    const ring = document.createElement("div"); ring.id = "qant-cursor-ring";
+    document.body.append(dot, ring);
+    document.documentElement.classList.add("qant-cursor-on");
+    let mx = innerWidth / 2, my = innerHeight / 2, rx = mx, ry = my;
+    addEventListener("pointermove", (e) => {
+      mx = e.clientX; my = e.clientY;
+      dot.style.transform = `translate(${mx}px,${my}px)`;
+    }, { passive: true });
+    (function ring_loop() {
+      rx += (mx - rx) * 0.18; ry += (my - ry) * 0.18;
+      ring.style.transform = `translate(${rx}px,${ry}px)`;
+      requestAnimationFrame(ring_loop);
+    })();
+    const grow = () => ring.classList.add("grow");
+    const shrink = () => ring.classList.remove("grow");
+    document.querySelectorAll("a,button,.btn,.nav-cta,.card,.stage,.stat").forEach((el) => {
+      el.addEventListener("pointerenter", grow);
+      el.addEventListener("pointerleave", shrink);
     });
   }
 

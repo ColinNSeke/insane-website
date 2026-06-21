@@ -463,3 +463,25 @@ html.qant-static #card3d .card3d-poster{ display:block; }
   #card3d #card3dFrame{ display:none; }
   #card3d .card3d-poster{ display:block; }
 }
+
+/* ============================================================
+   DURCHGANG 9 — 50k pass: light cursor, brightness lift
+   ============================================================ */
+/* custom light cursor (set up by JS; native cursor hidden only when active) */
+html.qant-cursor-on, html.qant-cursor-on *{ cursor:none !important; }
+#qant-cursor,#qant-cursor-ring{ position:fixed; top:0; left:0; z-index:99998; pointer-events:none;
+  border-radius:50%; mix-blend-mode:screen; will-change:transform; }
+#qant-cursor{ width:8px; height:8px; margin:-4px 0 0 -4px; background:#cdeeff;
+  box-shadow:0 0 14px 4px rgba(95,214,255,.85); }
+#qant-cursor-ring{ width:40px; height:40px; margin:-20px 0 0 -20px; border:1px solid rgba(95,214,255,.55);
+  transition:width .25s ease,height .25s ease,margin .25s ease,border-color .25s ease,background .25s ease; }
+#qant-cursor-ring.grow{ width:74px; height:74px; margin:-37px 0 0 -37px;
+  border-color:rgba(95,214,255,.9); background:rgba(95,214,255,.06); }
+
+/* brightness lift — the page was reading too dark */
+.bg-layer img{ filter:saturate(.85) contrast(1.04) brightness(.62); }
+.stage img{ filter:saturate(.92) contrast(1.04) brightness(.98); }
+
+/* assembly pieces want GPU compositing + a 3D context */
+.assemble-piece{ will-change:transform,opacity; backface-visibility:hidden; }
+main{ perspective:1400px; }
