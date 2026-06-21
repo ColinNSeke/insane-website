@@ -485,3 +485,18 @@ html.qant-cursor-on, html.qant-cursor-on *{ cursor:none !important; }
 /* assembly pieces want GPU compositing + a 3D context */
 .assemble-piece{ will-change:transform,opacity; backface-visibility:hidden; }
 main{ perspective:1400px; }
+
+/* ============================================================
+   DURCHGANG 10 — signature descent (replaces the 3D iframe)
+   ============================================================ */
+.descent{ height:100vh; padding:0; overflow:hidden; position:relative; background:#04060a; }
+.descent-stage{ position:absolute; inset:0; }
+.descent .layer{ position:absolute; inset:0; will-change:transform,opacity; }
+.descent .layer img{ width:100%; height:100%; object-fit:cover;
+  filter:saturate(.9) contrast(1.06) brightness(.92); }
+.descent-cap{ position:absolute; left:0; right:0; bottom:14vh; z-index:3; text-align:center;
+  padding:0 24px; }
+.descent-cap .q-eyebrow{ justify-content:center; }
+.descent-cap h2{ margin:0 auto; max-width:18ch; }
+.descent-cap::before{ content:""; position:absolute; z-index:-1; inset:-60% -20% -30%;
+  background:radial-gradient(60% 70% at 50% 70%, rgba(var(--scrim-void),.8), rgba(var(--scrim-void),0) 75%); }

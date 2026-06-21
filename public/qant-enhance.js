@@ -65,7 +65,7 @@
      ============================================================ */
   const PIECE_SEL = "h1,h2,h3,.eyebrow,.q-eyebrow,.reveal,.stat,.plist .cell,.stage,.card";
   document.querySelectorAll("section:not(.hero):not(#hero)").forEach((section) => {
-    if (section.classList.contains("signature")) return; // chip composite stays put
+    if (section.classList.contains("signature") || section.id === "descent") return; // own animation
     // collect candidates, drop any nested inside another candidate
     let pieces = [...section.querySelectorAll(PIECE_SEL)];
     pieces = pieces.filter((el) => !pieces.some((o) => o !== el && o.contains(el)));
@@ -113,26 +113,31 @@
       onToggle: (self) => stage.classList.toggle("lit", self.isActive) }));
 
   /* ============================================================
-     PINNED 3D CARD — drive assembly.html's internal scroll from the
-     parent. Pin ~2.6 viewport; parent progress → iframe scrollTop, so
-     the real photonic card assembles in slow motion (reversible).
+     SIGNATURE DESCENT — pinned dive through the real renders. Each
+     layer fades in small, scales up and fades out as you pass through
+     it; the next is already arriving → a continuous push into the
+     light. scrub-coupled = reversible.
      ============================================================ */
-  const card3d = document.querySelector("#card3d");
-  const frame = document.getElementById("card3dFrame");
-  if (card3d && frame && !STATIC) {
-    ST.create({
-      trigger: card3d, start: "top top", end: "+=260%",
-      pin: true, scrub: 1, anticipatePin: 1, invalidateOnRefresh: true,
-      onUpdate(self) {
-        try {
-          const w = frame.contentWindow, d = w && w.document;
-          if (d && d.body) {
-            const max = d.body.scrollHeight - w.innerHeight;
-            if (max > 0) w.scrollTo(0, self.progress * max);
-          }
-        } catch (e) { /* iframe not ready yet */ }
-      },
+  const descent = document.querySelector("#descent");
+  if (descent && !STATIC) {
+    const layers = descent.querySelectorAll(".layer");
+    const cap = descent.querySelector(".descent-cap");
+    gsap.set(layers, { autoAlpha: 0, scale: 0.65, transformOrigin: "50% 50%" });
+    gsap.set(layers[0], { autoAlpha: 1, scale: 1.05 });
+    const tl = gsap.timeline({
+      scrollTrigger: { trigger: descent, start: "top top", end: "+=320%",
+        pin: true, scrub: 1, anticipatePin: 1, invalidateOnRefresh: true },
     });
+    layers.forEach((layer, i) => {
+      const at = i * 0.8;
+      if (i > 0) tl.fromTo(layer, { autoAlpha: 0, scale: 0.65 },
+        { autoAlpha: 1, scale: 1.05, ease: "power1.out", duration: 0.5 }, at);
+      // last layer stays (we end inside the light), others zoom past + fade
+      tl.to(layer, { scale: 1.9, autoAlpha: i === layers.length - 1 ? 1 : 0,
+        ease: "power1.in", duration: 0.6 }, at + 0.45);
+    });
+    if (cap) tl.fromTo(cap, { autoAlpha: 1, y: 0 },
+      { autoAlpha: 0, y: -40, ease: "power1.in", duration: 0.6 }, 0.35);
   }
 
   /* ============================================================

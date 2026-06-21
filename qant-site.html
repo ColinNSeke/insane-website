@@ -165,7 +165,7 @@
   @media(prefers-reduced-motion:reduce){.eyebrow .dot,.rail::after{animation:none}}
 </style>
 <!-- enhancement layer loads AFTER the base style so it can override layout -->
-<link rel="stylesheet" href="public/qant-enhance.css?v=13" />
+<link rel="stylesheet" href="public/qant-enhance.css?v=14" />
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -268,11 +268,20 @@
     </div>
   </section>
 
-  <!-- ★ SIGNATURE 3D — the real photonic card assembles on scroll (assembly.html
-       embedded + scroll-driven; isolated WebGL context, can't affect the beam) -->
-  <section class="q-sec card3d" id="card3d">
-    <iframe id="card3dFrame" src="assembly.html" title="Q.ANT photonic card — assembling" loading="lazy" tabindex="-1"></iframe>
-    <img class="card3d-poster" src="public/assets/qant/renders/chip-stack.webp" alt="Q.ANT photonic processor card" />
+  <!-- ★ SIGNATURE — pinned "descent into the processor": scroll dives through
+       the real renders (facility → rack → card → chip → into the light) -->
+  <section class="q-sec descent" id="descent" aria-label="Descend into the photonic processor">
+    <div class="descent-stage" aria-hidden="true">
+      <div class="layer"><img src="public/assets/qant/renders/datacenter-corridor.webp" alt="" loading="lazy" decoding="async" /></div>
+      <div class="layer"><img src="public/assets/qant/targeted/09_nps_rack_closeup.webp" alt="" loading="lazy" decoding="async" /></div>
+      <div class="layer"><img src="public/assets/qant/renders/accelerator-card.webp" alt="" loading="lazy" decoding="async" /></div>
+      <div class="layer"><img src="public/assets/qant/renders/chip-stack.webp" alt="" loading="lazy" decoding="async" /></div>
+      <div class="layer"><img src="public/assets/qant/renders/waveguides.webp" alt="" loading="lazy" decoding="async" /></div>
+    </div>
+    <div class="descent-cap">
+      <div class="q-eyebrow"><span class="dot"></span>Inside</div>
+      <h2>Descend into the <em>processor.</em></h2>
+    </div>
   </section>
 
   <!-- 4 · PROOF (kinetic numbers) -->
@@ -704,6 +713,6 @@ if(reduce){
   });
 }
 </script>
-<script type="module" src="public/qant-enhance.js?v=13"></script>
+<script type="module" src="public/qant-enhance.js?v=14"></script>
 </body>
 </html>
