@@ -15,6 +15,7 @@
   const gsap = window.gsap;
   const ST = window.ScrollTrigger;
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const STATIC = document.documentElement.classList.contains("qant-static");
 
   document.documentElement.classList.add("qant-enh");
 
