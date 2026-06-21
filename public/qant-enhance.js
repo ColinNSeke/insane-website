@@ -48,52 +48,34 @@
     return;
   }
 
-  /* ============================================================
-     FEATURE 1 — vertical scroll-beam (left edge)
-     ============================================================ */
-  const head = document.getElementById("beam-head");
-  const trail = document.getElementById("beam-trail");
-  if (head && trail) {
-    ST.create({
-      trigger: document.documentElement,
-      start: "top top",
-      end: "bottom bottom",
-      scrub: 1.5,
-      onUpdate: (self) => {
-        const p = self.progress;
-        head.style.top = (p * 100) + "%";
-        head.style.opacity = Math.min(1, p * 8);   // fade in once scrolling starts
-        trail.style.height = (p * 100) + "%";
-      },
-    });
-  }
+  /* (Feature 1 — the big background beam — is coupled to scroll in the
+     inline module via uNodeY; no DOM beam here.) */
 
   /* ============================================================
-     FEATURE 2 — section assembly (scrub, reversible)
-     Tag the content elements of each non-hero section as pieces,
-     scatter them (seeded-random), fly them into place on scroll.
+     SECTION ASSEMBLY — HARD. Every visible piece flies in from a big
+     offset (120–240px down, ±80px across, ±9° rotated, scale .8), each
+     on its OWN element trigger, scrub-coupled = reversible.
      ============================================================ */
-  const PIECE_SEL = "h1,h2,.eyebrow,.q-eyebrow,.reveal,.stat,.plist .cell,.stage,.card";
+  const PIECE_SEL = "h1,h2,h3,.eyebrow,.q-eyebrow,.reveal,.stat,.plist .cell,.stage,.card";
   document.querySelectorAll("section:not(.hero):not(#hero)").forEach((section) => {
     if (section.classList.contains("signature")) return; // chip composite stays put
     // collect candidates, drop any nested inside another candidate
     let pieces = [...section.querySelectorAll(PIECE_SEL)];
     pieces = pieces.filter((el) => !pieces.some((o) => o !== el && o.contains(el)));
-    pieces.forEach((piece) => piece.classList.add("assemble-piece"));
 
     pieces.forEach((piece, i) => {
-      const seed = i * 7 + 13;
-      const randX = Math.sin(seed) * 100;                       // -100..+100
-      const randY = 60 + Math.abs(Math.cos(seed) * 80);         // 60..140
-      const randR = Math.sin(seed * 3) * 6;                     // -6..+6 deg
-      const randS = 0.88 + Math.abs(Math.cos(seed * 2)) * 0.1;  // 0.88..0.98
-
-      gsap.set(piece, { x: randX, y: randY, rotation: randR, scale: randS, opacity: 0 });
-      gsap.to(piece, {
-        x: 0, y: 0, rotation: 0, scale: 1, opacity: 1,
-        ease: "power3.out",
-        scrollTrigger: { trigger: section, start: "top 85%", end: "top 20%", scrub: 1.2 },
-      });
+      piece.classList.add("assemble-piece");
+      gsap.fromTo(piece,
+        {
+          y: 120 + (i % 5) * 30,        // 120–240px down
+          x: ((i % 3) - 1) * 80,        // -80, 0, +80
+          rotation: ((i % 7) - 3) * 3,  // -9°..+9°
+          scale: 0.8, opacity: 0,
+        },
+        {
+          y: 0, x: 0, rotation: 0, scale: 1, opacity: 1, ease: "power3.out",
+          scrollTrigger: { trigger: piece, start: "top 95%", end: "top 45%", scrub: 1 },
+        });
     });
   });
 
